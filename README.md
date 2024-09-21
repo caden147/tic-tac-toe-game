@@ -17,4 +17,5 @@ The game is not implemented yet, but when it is you could play by doing the foll
 * [Link to Python Documentation](https://docs.python.org/3/)
 * [Link to Sockets Documentation](https://docs.python.org/3/library/socket.html#example)
 * [Link to Socket Tutorial](https://docs.python.org/3/howto/sockets.html)
+* [Statement of Work](https://github.com/FireChickenProductivity/tic-tac-toe-game/blob/main/StatementOfWork.md)
     
