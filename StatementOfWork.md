@@ -1,4 +1,4 @@
-# Statement of Work (SOW) Template for Socket Programming Project
+# Statement of Work (SOW) for Socket Programming Project
 ## Project Title:
 Tacs Free Tic-Tac-Toe
 
