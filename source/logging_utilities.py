@@ -18,5 +18,5 @@ class Logger:
         The current timestamp is prepended to the message.
         """
         with open(self.path, "a+") as file:
-            timestamp = datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S")
+            timestamp = datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S.%f")
             file.write(f"{timestamp}: {message}\n")
