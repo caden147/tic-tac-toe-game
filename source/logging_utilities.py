@@ -15,7 +15,7 @@ class Logger:
     def log_message(self, message: str):
         """
         message: the message to store in the log.
-        The current timestamp is pretended to the message.
+        The current timestamp is prepended to the message.
         """
         with open(self.path, "a+") as file:
             timestamp = datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S")
