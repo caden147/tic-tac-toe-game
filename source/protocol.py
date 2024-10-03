@@ -25,19 +25,17 @@ class MessageProtocol:
         self.fields = fields
 
     def compute_fields_string(self):
-        text = ""
+        text = ">"
         for field in self.fields:
             text += field.compute_struct_text()
         return text
 
     def pack(self, *args):
-        struck_format = ">" + self.compute_fields_string
-        return struct.pack(struck_format, *args)
+        return struct.pack(self.compute_fields_string(), *args)
 
     def unpack(self, input_bytes):
         results = {}
-        struck_format = "<" + self.compute_fields_string()
-        values = struct.unpack(struck_format, input_bytes)
+        values = struct.unpack(self.compute_fields_string(), input_bytes)
         for i in range(len(values)):
             name = self.fields[i].get_name()
             results[name] = values[i]
