@@ -1,5 +1,18 @@
 import struct
 
+TYPE_CODE_SIZE = 1
+def pack_type_code(type_code: int):
+    return struct.pack(">B", type_code)
+
+def unpack_type_code_from_message(message):
+    relevant_bytes = message[:TYPE_CODE_SIZE]
+    type_code = struct.unpack(">B", relevant_bytes)[0]
+    return type_code
+
+def compute_message_after_type_code(message):
+    return message[TYPE_CODE_SIZE:]
+
+
 class ProtocolField:
     def get_name(self):
         pass
@@ -75,14 +88,3 @@ class ProtocolMap:
         """Returns true if the map has a protocol with the specified type code and false otherwise"""
         return code in self.map
     
-TYPE_CODE_SIZE = 1
-def pack_type_code(type_code: int):
-    return struct.pack(">B", type_code)
-
-def unpack_type_code_from_message(message):
-    relevant_bytes = message[:TYPE_CODE_SIZE]
-    type_code = struct.unpack(">B", relevant_bytes)[0]
-    return type_code
-
-def compute_message_after_type_code(message):
-    return message[TYPE_CODE_SIZE:]
