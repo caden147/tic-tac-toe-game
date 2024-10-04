@@ -52,7 +52,9 @@ class MessageProtocol:
         return text
 
     def pack(self, *args):
-        return struct.pack(self.compute_fields_string(), *args)
+        type_code_bytes = pack_type_code(self.type_code)
+        values_bytes = struct.pack(self.compute_fields_string(), *args)
+        return type_code_bytes + values_bytes
 
     def unpack(self, input_bytes):
         results = {}
