@@ -59,3 +59,20 @@ class MessageProtocol:
             size += self.fields[i].get_size()
         return size
 
+class ProtocolMap:
+    """Maps between type codes and protocols"""
+    def __init__(self, protocols):
+        """protocols: an iterable of MessageProtocols"""
+        self.map = {}
+        for protocol in protocols:
+            self.map[protocol.get_type_code()] = protocol
+        
+    def get_protocol_with_type_code(self, code: int):
+        """Returns the protocol with the associated type code"""
+        return self.map[code]
+    
+    def has_protocol_with_type_code(self, code: int):
+        """Returns true if the map has a protocol with the specified type code and false otherwise"""
+        return code in self.map
+    
+
