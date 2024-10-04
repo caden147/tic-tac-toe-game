@@ -55,7 +55,7 @@ class MessageProtocol:
     def compute_size(self):
         """Returns the size in bytes of a message using the protocol"""
         size = 0
-        for i in range(len(values)):
+        for i in range(len(self.fields)):
             size += self.fields[i].get_size()
         return size
 
