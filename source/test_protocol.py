@@ -36,7 +36,14 @@ class TestMessageProtocol(unittest.TestCase):
         self.assertEqual(protocol.compute_variable_length_field_max_size(0), expected_max_size)
         self.assertEqual(protocol.compute_field_name(0), expected_field_name)
 
-
+    def test_correctly_packs_text(self):
+        protocol = self._create_protocol()
+        text = "testing"
+        encoded_text = text.encode("utf-8")
+        text_length = len(encoded_text)
+        expected = struct.pack(">BI" + str(text_length) + "s", 0, text_length, encoded_text)
+        packed_text = protocol.pack(text)
+        self.assertEqual(expected, packed_text)
 
 if __name__ == '__main__':
     unittest.main()

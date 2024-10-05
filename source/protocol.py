@@ -61,7 +61,7 @@ class ProtocolField:
         pass
     
     def compute_struct_text(self):
-        """Gives the text used to represent the field in a struct.pack or struck.unpack call"""
+        """Gives the text used to represent the field in a struct.pack or struct.unpack call"""
         pass
 
     def is_fixed_length(self):
@@ -93,6 +93,9 @@ class VariableLengthProtocolField(ProtocolField):
     
     def compute_struct_text(self, size):
         return self.create_struct_text(size)
+    
+    def compute_struct_text_from_value(self, value):
+        return self.compute_struct_text(len(value))
 
     def get_max_size(self):
         return self.max_size
@@ -180,9 +183,12 @@ class VariableLengthMessageProtocol(MessageProtocol):
         args = [encode_value(value) for value in args]
         values_bytes = pack_type_code(self.type_code)
         for index, field in enumerate(self.fields):
-            field_bytes = struct.pack(">" + field.compute_struct_text(), args[index])[0]
-            if not field.is_fixed_length():
-                size_bytes = struct.pack(">" + compute_format_representation_for_size(field.get_max_size()), len(field_bytes))
+            if field.is_fixed_length():
+                field_bytes = struct.pack(">" + field.compute_struct_text(), args[index])
+            else:
+                field_bytes = struct.pack(">" + field.compute_struct_text_from_value(args[index]), args[index])
+                size = len(field_bytes)
+                size_bytes = struct.pack(">" + compute_format_representation_for_size(field.get_max_size()), size)
                 field_bytes = size_bytes + field_bytes
             values_bytes += field_bytes
         return values_bytes
