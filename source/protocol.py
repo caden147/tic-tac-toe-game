@@ -17,16 +17,16 @@ def compute_format_representation_for_size(size: int):
         Computes the appropriate format string representation for the size of a field
         size: the desired size in number of bytes
     """
-    if size < 1 or size > 8:
-        raise ValueError("Tried to create byte format string text for invalid size")
-    elif size == 1:
+    if size == 1:
         return 'B'
     elif size == 2:
         return 'H'
-    elif size <= 4:
+    elif size == 4:
         return 'I'
-    elif size <= 8:
+    elif size == 8:
         return 'L'
+    else:
+        raise ValueError("Tried to create byte format string text for invalid size")
 
 
 class ByteStream:
@@ -159,16 +159,29 @@ class VariableLengthMessageProtocol(MessageProtocol):
     def is_last_field(self, i):
         return i == len(self.fields) - 1
     
-    def compute_field_length(self, i):
+    def compute_fixed_length_field_length(self, i):
         field = self.fields[i]
-        if field.is_fixed_length():
-            return field.get_size()
-        else:
-            return field.get_max_size()
-        
+        return field.get_size()
     
+    def compute_variable_length_field_max_size(self, i):
+        field = self.fields[i]
+        return field.get_max_size()
+        
+    def unpack_field_length(self, i, input_bytes, starting_index):
+        maximum_size = self.compute_variable_length_field_max_size(i)
+        relevant_bytes = input_bytes[starting_index: starting_index + maximum_size]
+        return struct.unpack(">" + compute_format_representation_for_size(maximum_size), relevant_bytes)[0]
 
-
+    def unpack_variable_length_field(self, i, length, input_bytes, starting_index):
+        field = self.fields[i]
+        relevant_bytes = input_bytes[starting_index: starting_index + length]
+        return struct.unpack(">" + field.compute_struct_text(), relevant_bytes)[0]
+    
+    def unpack_fixed_length_field(self, i, input_bytes, starting_index):
+        field = self.fields[i]
+        length = self.compute_fixed_length_field_length(i)
+        relevant_bytes = input_bytes[starting_index: starting_index + length]
+        return struct.unpack(">" + field.compute_struct_text(), relevant_bytes)[0]
 
 class ProtocolMap:
     """Maps between type codes and protocols"""
