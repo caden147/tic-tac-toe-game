@@ -280,7 +280,6 @@ class MessageHandler:
                 self.bytes_index
             )
 
-
     def update_values(self):
         if self.protocol.is_fixed_length():
             self._update_values_based_on_fixed_length_protocol()
@@ -300,3 +299,16 @@ class MessageHandler:
 
     def get_values(self):
         return self.values
+
+class ProtocolCallbackHandler:
+    def __init__(self):
+        self.callbacks = {}
+    
+    def register_callback_with_protocol(self, callback, protocol_type_code):
+        self.callbacks[protocol_type_code] = callback
+    
+    def pass_values_to_protocol_callback(self, values, protocol_type_code):
+        self.callbacks[protocol_type_code](values)
+
+    def has_protocol(self, protocol_type_code):
+        return protocol_type_code in self.callbacks
