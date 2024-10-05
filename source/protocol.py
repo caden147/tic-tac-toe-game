@@ -82,9 +82,9 @@ class VariableLengthProtocolField(ProtocolField):
     def get_name(self):
         return self.name
     
-    def compute_struct_text(self, value):
-        return compute_format_representation_for_size(self.max_size) + self.struct_text
-    
+    def compute_struct_text(self):
+        return self.struct_text
+
     def get_max_size(self):
         return self.max_size
     
@@ -140,7 +140,35 @@ class VariableLengthMessageProtocol(MessageProtocol):
         self.type_code = type_code
         self.fields = fields
     
+    def get_type_code(self):
+        return self.type_code
     
+    def pack(self, *args):
+        values_bytes = pack_type_code(self.type_code)
+        for index, field in enumerate(self.fields):
+            field_bytes = struct.pack(">" + field.compute_struct_text(), args[index])[0]
+            if not field.is_fixed_length():
+                size_bytes = struct.pack(">" + compute_format_representation_for_size(field.get_max_size()), len(field_bytes))
+                field_bytes = size_bytes + field_bytes
+            values_bytes += field_bytes
+        return values_bytes
+    
+    def is_field_fixed_length(self, i):
+        return self.fields[i].is_fixed_length()
+
+    def is_last_field(self, i):
+        return i == len(self.fields) - 1
+    
+    def compute_field_length(self, i):
+        field = self.fields[i]
+        if field.is_fixed_length():
+            return field.get_size()
+        else:
+            return field.get_max_size()
+        
+    
+
+
 
 class ProtocolMap:
     """Maps between type codes and protocols"""
