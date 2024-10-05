@@ -74,22 +74,32 @@ class ConstantLengthProtocolField(ProtocolField):
         return self.size
     
 class VariableLengthProtocolField(ProtocolField):
-    def __init__(self, name: str, struct_text: str, max_size: int = 1):
+    def __init__(self, name: str, create_struct_text, max_size: int = 1):
         self.name = name
-        self.struct_text = struct_text
+        self.create_struct_text = create_struct_text
         self.max_size = max_size
     
     def get_name(self):
         return self.name
     
-    def compute_struct_text(self):
-        return self.struct_text
+    def compute_struct_text(self, size):
+        return self.create_struct_text(size)
 
     def get_max_size(self):
         return self.max_size
     
     def is_fixed_length(self):
         return False
+
+def create_string_protocol_field(name, max_size_in_bytes):
+    def create_struct_text(size):
+        return str(size) + "s"
+    field = VariableLengthProtocolField(name, create_struct_text, max_size_in_bytes)
+    return field
+
+def create_single_byte_positive_integer_protocol_field(name):
+    field = ConstantLengthProtocolField(name, "B", 1)
+    return field
 
 class MessageProtocol:
     def get_type_code(self):
@@ -152,6 +162,9 @@ class VariableLengthMessageProtocol(MessageProtocol):
     
     def get_type_code(self):
         return self.type_code
+
+    def is_fixed_length(self):
+        return False
     
     def pack(self, *args):
         values_bytes = pack_type_code(self.type_code)
@@ -185,7 +198,7 @@ class VariableLengthMessageProtocol(MessageProtocol):
     def unpack_variable_length_field(self, i, length, input_bytes, starting_index):
         field = self.fields[i]
         relevant_bytes = input_bytes[starting_index: starting_index + length]
-        return struct.unpack(">" + field.compute_struct_text(), relevant_bytes)[0]
+        return struct.unpack(">" + field.compute_struct_text(length), relevant_bytes)[0]
     
     def unpack_fixed_length_field(self, i, input_bytes, starting_index):
         field = self.fields[i]
@@ -312,3 +325,13 @@ class ProtocolCallbackHandler:
 
     def has_protocol(self, protocol_type_code):
         return protocol_type_code in self.callbacks
+
+def create_text_message_protocol(type_code: int):
+    field = create_string_protocol_field("text", 4)
+    protocol = VariableLengthMessageProtocol(type_code, [field])
+    return protocol
+
+def create_single_byte_positive_integer_message_protocol(type_code: int):
+    field = create_single_byte_positive_integer_protocol_field('number')
+    protocol = VariableLengthMessageProtocol(type_code, [field])
+    return protocol
