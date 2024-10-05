@@ -89,15 +89,18 @@ def encode_text(text):
     return text.encode("utf-8")
 
 def decode_text(input_bytes):
-    return input_bytes.decode(utf-8)
+    return input_bytes.decode("utf-8")
+
+def create_complex_variable_length_message_protocol():
+    first_field = protocol.create_string_protocol_field('name', 2)
+    second_field = protocol.create_string_protocol_field('password', 1)
+    third_field = protocol.create_single_byte_positive_integer_protocol_field('type')
+    result = protocol.VariableLengthMessageProtocol(2, [first_field, second_field, third_field])
+    return result
 
 class TestComplexVariableLengthMessageProtocol(unittest.TestCase):
     def _create_protocol(self):
-        first_field = protocol.create_string_protocol_field('name', 2)
-        second_field = protocol.create_string_protocol_field('password', 1)
-        third_field = protocol.create_single_byte_positive_integer_protocol_field('type')
-        result = protocol.VariableLengthMessageProtocol(2, [first_field, second_field, third_field])
-        return result
+        return create_complex_variable_length_message_protocol()
 
     def _create_packed_example(self):
         name = 'bob versus chuck'
@@ -181,6 +184,17 @@ class TestMessageHandler(unittest.TestCase):
     
     def _create_values_and_names(self):
         return [['message'], [1]], [['text'], ['number']]
+    
+    def _create_more_complex_protocol_map(self):
+        variable_length_protocol = create_complex_variable_length_message_protocol()
+        bigger_fixed_length_field = protocol.ConstantLengthProtocolField('big', "2s", 2)
+        small_field = protocol.create_single_byte_positive_integer_protocol_field('small')
+        fixed_length_protocol = protocol.FixedLengthMessageProtocol(1, [bigger_fixed_length_field, small_field])
+        protocol_map = protocol.ProtocolMap([variable_length_protocol, fixed_length_protocol])
+        return protocol_map
+
+    def _create_more_complex_values_and_names(self):
+        return [["a"*1000, "b"*5, 9], ["sm", 126]], [['name', 'password', 'type'], ['big', 'small']]
 
     def test_handles_full_values(self):
         protocol_map = self._create_protocol_map()
@@ -197,9 +211,7 @@ class TestMessageHandler(unittest.TestCase):
             actual = message_handler.get_values()
             self.assertEqual(expected, actual)
 
-    def test_handles_single_byte_at_a_time(self):
-        protocol_map = self._create_protocol_map()
-        values, names = self._create_values_and_names()
+    def _assert_handles_single_byte_at_a_time_given_map_values_and_names(self, protocol_map, values, names):
         message_handler = protocol.MessageHandler(protocol_map)
         for i in range(1):
             packing = protocol_map.pack_values_given_type_code(i, *values[i])
@@ -214,6 +226,16 @@ class TestMessageHandler(unittest.TestCase):
             expected = create_values_dictionary(values[i], names[i])
             actual = message_handler.get_values()
             self.assertEqual(expected, actual)
+
+    def test_handles_single_byte_at_a_time(self):
+        protocol_map = self._create_protocol_map()
+        values, names = self._create_values_and_names()
+        self._assert_handles_single_byte_at_a_time_given_map_values_and_names(protocol_map, values, names)
+
+    def test_handle_single_byte_at_a_time_with_more_complex_protocols(self):
+        protocol_map = self._create_more_complex_protocol_map()
+        values, names = self._create_more_complex_values_and_names()
+        self._assert_handles_single_byte_at_a_time_given_map_values_and_names(protocol_map, values, names)
 
 if __name__ == '__main__':
     unittest.main()
