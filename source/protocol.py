@@ -100,6 +100,9 @@ class MessageProtocol:
 
     def is_fixed_length(self):
         return True
+    
+    def get_number_of_fields(self):
+        pass
 
 class FixedLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
@@ -138,6 +141,9 @@ class FixedLengthMessageProtocol(MessageProtocol):
     
     def get_size(self):
         return self.size
+
+    def get_number_of_fields(self):
+        return len(self.fields)
 
 class VariableLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
@@ -190,6 +196,9 @@ class VariableLengthMessageProtocol(MessageProtocol):
     def compute_field_name(self, i):
         field = self.fields[i]
         return field.get_name()
+    
+    def get_number_of_fields(self):
+        return len(self.fields)
 
 class ProtocolMap:
     """Maps between type codes and protocols"""
@@ -254,6 +263,8 @@ class MessageHandler:
             self.next_expected_size = self.protocol.compute_fixed_length_field_length()
         else:
             self.next_expected_size = None
+        if self.field_index >= self.protocol.get_number_of_fields():
+            self.is_done = True
 
     def _update_values_based_on_variable_length_protocol(self):
         if not self.field_index:
@@ -261,7 +272,7 @@ class MessageHandler:
         number_of_new_bytes = len(self.bytes) - self.bytes_index
         if self.next_expected_size:
             if number_of_new_bytes >= self.next_expected_size:
-                pass
+                self._advance_field()
         elif number_of_new_bytes >= self.protocol.compute_variable_length_field_max_size(self.field_index):
             self.next_expected_size = self.protocol.unpack_field_length(
                 self.field_index,
