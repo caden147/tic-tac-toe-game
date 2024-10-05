@@ -27,6 +27,14 @@ class TestMessageProtocol(unittest.TestCase):
         protocol = self._create_protocol()
         unpacked_text = protocol.unpack_variable_length_field(0, len(encoded_text), packed_text, 0).decode("utf-8")
         self.assertEqual(unpacked_text, text)
+    
+    def test_gives_correct_field_information(self):
+        protocol = self._create_protocol()
+        expected_field_name = "text"
+        expected_max_size = 4
+        self.assertTrue(protocol.is_last_field(0))
+        self.assertEqual(protocol.compute_variable_length_field_max_size(0), expected_max_size)
+        self.assertEqual(protocol.compute_field_name(0), expected_field_name)
 
 if __name__ == '__main__':
     unittest.main()
