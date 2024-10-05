@@ -128,8 +128,42 @@ class TestComplexVariableLengthMessageProtocol(unittest.TestCase):
             self.assertEqual(expected[key], values[key])
         self.assertTrue(message_handler.is_done_obtaining_values())
 
+class TestMultipleFieldFixedLengthMessageProtocol(unittest.TestCase):
+    def _compute_protocol(self):
+        first_field = protocol.create_single_byte_positive_integer_protocol_field('1')
+        second_field = protocol.create_single_byte_positive_integer_protocol_field('2')
+        result = protocol.FixedLengthMessageProtocol(100, [first_field, second_field])
+        return result
 
+    def test_has_correct_size(self):
+        expected = 2
+        actual = self._compute_protocol().get_size()
+        self.assertEqual(expected, actual)
 
+    def test_has_correct_number_of_fields(self):
+        expected = 2
+        actual = self._compute_protocol().get_number_of_fields()
+        self.assertEqual(expected, actual)
+
+    def _create_pack_and_values(self):
+        first_value = 90
+        second_value = 0
+        values = {"1": first_value, "2": second_value}
+        packing = struct.pack(">BBB", 100, first_value, second_value)
+        return packing, values
+
+    def test_can_pack_values_correctly(self):
+        message_protocol = self._compute_protocol()
+        expected, values = self._create_pack_and_values()
+        actual = message_protocol.pack(values["1"], values["2"])
+        self.assertEqual(expected, actual)
+
+    def test_can_unpack_values_correctly(self):
+        message_protocol = self._compute_protocol()
+        pack, expected = self._create_pack_and_values()
+        pack = pack[1:]
+        actual = message_protocol.unpack(pack)
+        self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
     unittest.main()
