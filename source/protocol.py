@@ -12,6 +12,40 @@ def unpack_type_code_from_message(message):
 def compute_message_after_type_code(message):
     return message[TYPE_CODE_SIZE:]
 
+def compute_format_representation_for_size(size: int):
+    """
+        Computes the appropriate format string representation for the size of a field
+        size: the desired size in number of bytes
+    """
+    if size < 1 or size > 8:
+        raise ValueError("Tried to create byte format string text for invalid size")
+    elif size == 1:
+        return 'B'
+    elif size == 2:
+        return 'H'
+    elif size <= 4:
+        return 'I'
+    elif size <= 8:
+        return 'L'
+
+
+class ByteStream:
+    def __init__(self, input_bytes):
+        self.bytes = bytearray(input_bytes)
+        self.index = 0
+    
+    def append(self, input_bytes):
+        self.bytes.extend(input_bytes)
+
+    def extract(self, amount: int):
+        ending = self.index + amount
+        result = self.bytes[self.index:ending]    
+        self.index = ending
+        return result
+
+    def size(self):
+        return len(self.bytes) - self.index
+
 
 class ProtocolField:
     def get_name(self):
@@ -21,11 +55,10 @@ class ProtocolField:
         """Gives the text used to represent the field in a struct.pack or struck.unpack call"""
         pass
 
-    def get_size(self):
-        """Returns the size in bytes of the field"""
-        pass
+    def is_fixed_length(self):
+        return True
 
-class SimpleProtocolField(ProtocolField):
+class ConstantLengthProtocolField(ProtocolField):
     def __init__(self, name: str, struct_text: str, size: int):
         self.name = name
         self.struct_text = struct_text
@@ -39,8 +72,36 @@ class SimpleProtocolField(ProtocolField):
     
     def get_size(self):
         return self.size
+    
+class VariableLengthProtocolField(ProtocolField):
+    def __init__(self, name: str, struct_text: str, max_size: int = 1):
+        self.name = name
+        self.struct_text = struct_text
+        self.max_size = max_size
+    
+    def get_name(self):
+        return self.name
+    
+    def compute_struct_text(self, value):
+        return compute_format_representation_for_size(self.max_size) + self.struct_text
+    
+    def get_max_size(self):
+        return self.max_size
+    
+    def is_fixed_length(self):
+        return False
 
 class MessageProtocol:
+    def get_type_code(self):
+        pass
+
+    def pack(self, *args):
+        pass
+
+    def is_fixed_length(self):
+        return True
+
+class FixedLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
         self.type_code = type_code
         self.fields = fields
@@ -73,6 +134,13 @@ class MessageProtocol:
         for i in range(len(self.fields)):
             size += self.fields[i].get_size()
         return size
+
+class VariableLengthMessageProtocol(MessageProtocol):
+    def __init__(self, type_code, fields):
+        self.type_code = type_code
+        self.fields = fields
+    
+    
 
 class ProtocolMap:
     """Maps between type codes and protocols"""
