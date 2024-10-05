@@ -281,10 +281,11 @@ class MessageHandler:
                     self.bytes_index
                 )
             else:
-                name = self.protocol.self.compute_field_name(self.field_index)
+                name = self.protocol.compute_field_name(self.field_index)
                 value = self.protocol.unpack_variable_length_field(
                     self.field_index,
                     self.next_expected_size,
+                    self.bytes,
                     self.bytes_index
                 )
             self.values[name] = value
@@ -295,9 +296,12 @@ class MessageHandler:
             self.next_expected_size = None
         if self.field_index >= self.protocol.get_number_of_fields():
             self.is_done = True
+        else:
+            self._update_values_based_on_variable_length_protocol()
 
     def _update_values_based_on_variable_length_protocol(self):
-        if not self.field_index:
+        if self.field_index < 0:
+            print('advancing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             self._advance_field()
         number_of_new_bytes = len(self.bytes) - self.bytes_index
         if self.next_expected_size:

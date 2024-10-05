@@ -122,9 +122,9 @@ class TestComplexVariableLengthMessageProtocol(unittest.TestCase):
         packing = packing[1:]
         message_handler.update_protocol(2)
         message_handler.receive_bytes(packing)
-        self.assertTrue(message_handler.is_done_obtaining_values())
         values = message_handler.get_values()
         self.assertEqual(expected, values)
+        self.assertTrue(message_handler.is_done_obtaining_values())
 
 
 
