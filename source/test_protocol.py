@@ -117,7 +117,8 @@ class TestComplexVariableLengthMessageProtocol(unittest.TestCase):
 
     def test_can_correctly_unpack_values(self):
         message_protocol = self._create_protocol()
-        message_handler = protocol.MessageHandler({2: message_protocol})
+        protocol_map = protocol.ProtocolMap([message_protocol])
+        message_handler = protocol.MessageHandler(protocol_map)
         packing, expected = self._create_packed_example()
         packing = packing[1:]
         message_handler.update_protocol(2)
@@ -164,6 +165,39 @@ class TestMultipleFieldFixedLengthMessageProtocol(unittest.TestCase):
         pack = pack[1:]
         actual = message_protocol.unpack(pack)
         self.assertEqual(expected, actual)
+
+def create_values_dictionary(values, names):
+    result = {}
+    for i in range(len(values)):
+        result[names[i]] = values[i]
+    return result
+
+class TestMessageHandler(unittest.TestCase):
+    def _create_protocol_map(self):
+        message_protocol = protocol.create_text_message_protocol(0)
+        nonnegative_integer_protocol = protocol.create_single_byte_positive_integer_message_protocol(1)
+        protocol_map = protocol.ProtocolMap([message_protocol, nonnegative_integer_protocol])
+        return protocol_map
+    
+    def _create_values_and_names(self):
+        return [['message'], [1]], [['text'], ['number']]
+
+    def test_handles_full_values(self):
+        protocol_map = self._create_protocol_map()
+        values, names = self._create_values_and_names()
+        message_handler = protocol.MessageHandler(protocol_map)
+        for i in range(1):
+            packing = protocol_map.pack_values_given_type_code(i, *values[i])
+            type_code = protocol.unpack_type_code_from_message(packing)
+            packing = protocol.compute_message_after_type_code(packing)
+            message_handler.update_protocol(type_code)
+            message_handler.receive_bytes(packing)
+            self.assertTrue(message_handler.is_done_obtaining_values())
+            expected = create_values_dictionary(values[i], names[i])
+            actual = message_handler.get_values()
+            self.assertEqual(expected, actual)
+
+
 
 if __name__ == '__main__':
     unittest.main()

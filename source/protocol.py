@@ -245,6 +245,11 @@ class ProtocolMap:
     def has_protocol_with_type_code(self, code: int):
         """Returns true if the map has a protocol with the specified type code and false otherwise"""
         return code in self.map
+
+    def pack_values_given_type_code(self, code: int, *values):
+        message_protocol = self.get_protocol_with_type_code(code)
+        result = message_protocol.pack(*values)
+        return result
     
 class MessageHandler:
     def __init__(self, protocol_map: ProtocolMap):
@@ -331,7 +336,7 @@ class MessageHandler:
         self.update_values()
 
     def update_protocol(self, type_code):
-        protocol = self.protocol_map[type_code]
+        protocol = self.protocol_map.get_protocol_with_type_code(type_code)
         self.initialize(protocol)
 
     def is_done_obtaining_values(self):
