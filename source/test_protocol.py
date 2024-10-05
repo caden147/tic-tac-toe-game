@@ -45,5 +45,45 @@ class TestMessageProtocol(unittest.TestCase):
         packed_text = protocol.pack(text)
         self.assertEqual(expected, packed_text)
 
+class TestFixedLengthProtocol(unittest.TestCase):
+    def _create_protocol(self):
+        return protocol.create_single_byte_positive_integer_message_protocol(12)
+    
+    def test_computes_correct_field_string(self):
+        expected = ">B"
+        actual = self._create_protocol().compute_fields_string()
+        self.assertEqual(expected, actual)
+    
+    def test_can_correctly_pack_argument(self):
+        value = 10
+        protocol = self._create_protocol()
+        actual = protocol.pack(value)
+        expected = struct.pack(">BB", 12, 10)
+        self.assertEqual(actual, expected)
+
+    def test_returns_correct_type_code(self):
+        expected = 12
+        actual = self._create_protocol().get_type_code()
+        self.assertEqual(expected, actual)
+
+    def test_can_correctly_unpack_message(self):
+        protocol = self._create_protocol()
+        input_bytes = struct.pack(">B", 100)
+        expected_result = {'number': 100}
+        actual_result = protocol.unpack(input_bytes)
+        self.assertEqual(expected_result, actual_result)
+
+    def test_returns_correct_size(self):
+        protocol = self._create_protocol()
+        expected = 1
+        actual = protocol.get_size()
+        self.assertEqual(actual, expected)
+
+    def test_returns_correct_number_of_fields(self):
+        protocol = self._create_protocol()
+        expected = 1
+        actual = protocol.get_number_of_fields()
+        self.assertEqual(actual, expected)
+
 if __name__ == '__main__':
     unittest.main()

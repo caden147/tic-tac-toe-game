@@ -350,5 +350,5 @@ def create_text_message_protocol(type_code: int):
 
 def create_single_byte_positive_integer_message_protocol(type_code: int):
     field = create_single_byte_positive_integer_protocol_field('number')
-    protocol = VariableLengthMessageProtocol(type_code, [field])
+    protocol = FixedLengthMessageProtocol(type_code, [field])
     return protocol
