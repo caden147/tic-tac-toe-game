@@ -28,6 +28,15 @@ def compute_format_representation_for_size(size: int):
     else:
         raise ValueError("Tried to create byte format string text for invalid size")
 
+def encode_value(value):
+    if type(value) == str:
+        return value.encode("utf-8")
+    return value
+
+def decode_value(value):
+    if type(value) == bytes:
+        return value.decode("utf-8")
+    return value
 
 class ByteStream:
     def __init__(self, input_bytes):
@@ -127,6 +136,7 @@ class FixedLengthMessageProtocol(MessageProtocol):
         return text
 
     def pack(self, *args):
+        args = [encode_value(value) for value in args]
         type_code_bytes = pack_type_code(self.type_code)
         values_bytes = struct.pack(self.compute_fields_string(), *args)
         return type_code_bytes + values_bytes
@@ -136,7 +146,7 @@ class FixedLengthMessageProtocol(MessageProtocol):
         values = struct.unpack(self.compute_fields_string(), input_bytes)
         for i in range(len(values)):
             name = self.fields[i].get_name()
-            results[name] = values[i]
+            results[name] = decode_value(values[i])
         return results
 
     def get_type_code(self):
@@ -167,6 +177,7 @@ class VariableLengthMessageProtocol(MessageProtocol):
         return False
     
     def pack(self, *args):
+        args = [encode_value(value) for value in args]
         values_bytes = pack_type_code(self.type_code)
         for index, field in enumerate(self.fields):
             field_bytes = struct.pack(">" + field.compute_struct_text(), args[index])[0]
@@ -198,13 +209,13 @@ class VariableLengthMessageProtocol(MessageProtocol):
     def unpack_variable_length_field(self, i, length, input_bytes, starting_index):
         field = self.fields[i]
         relevant_bytes = input_bytes[starting_index: starting_index + length]
-        return struct.unpack(">" + field.compute_struct_text(length), relevant_bytes)[0]
+        return decode_value(struct.unpack(">" + field.compute_struct_text(length), relevant_bytes)[0])
     
     def unpack_fixed_length_field(self, i, input_bytes, starting_index):
         field = self.fields[i]
         length = self.compute_fixed_length_field_length(i)
         relevant_bytes = input_bytes[starting_index: starting_index + length]
-        return struct.unpack(">" + field.compute_struct_text(), relevant_bytes)[0]
+        return decode_value(struct.unpack(">" + field.compute_struct_text(), relevant_bytes)[0])
     
     def compute_field_name(self, i):
         field = self.fields[i]
