@@ -197,7 +197,23 @@ class TestMessageHandler(unittest.TestCase):
             actual = message_handler.get_values()
             self.assertEqual(expected, actual)
 
-
+    def test_handles_single_byte_at_a_time(self):
+        protocol_map = self._create_protocol_map()
+        values, names = self._create_values_and_names()
+        message_handler = protocol.MessageHandler(protocol_map)
+        for i in range(1):
+            packing = protocol_map.pack_values_given_type_code(i, *values[i])
+            type_code = protocol.unpack_type_code_from_message(packing)
+            packing = protocol.compute_message_after_type_code(packing)
+            message_handler.update_protocol(type_code)
+            for j in range(len(packing)):
+                byte = packing[j:j+1]
+                self.assertFalse(message_handler.is_done_obtaining_values())
+                message_handler.receive_bytes(byte)
+            self.assertTrue(message_handler.is_done_obtaining_values())
+            expected = create_values_dictionary(values[i], names[i])
+            actual = message_handler.get_values()
+            self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
     unittest.main()
