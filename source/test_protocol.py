@@ -99,16 +99,34 @@ class TestComplexVariableLengthMessageProtocol(unittest.TestCase):
         result = protocol.VariableLengthMessageProtocol(2, [first_field, second_field, third_field])
         return result
 
-    def test_can_correctly_pack_values(self):
+    def _create_packed_example(self):
         name = 'bob versus chuck'
         password = '1'*100    
         game_type = 30
-        protocol = self._create_protocol()
-        actual = protocol.pack(name, password, game_type)
         encoded_name = encode_text(name)
         encoded_password = encode_text(password)
-        expected = struct.pack(">BH16sB100sB", 2, 16, encoded_name, 100, encoded_password, game_type)
+        packing = struct.pack(">BH16sB100sB", 2, 16, encoded_name, 100, encoded_password, game_type)
+        values = {'name': name, 'password': password, 'type': game_type}
+        return packing, values
+
+    def test_can_correctly_pack_values(self):
+        protocol = self._create_protocol()
+        expected, values = self._create_packed_example()
+        actual = protocol.pack(values['name'], values['password'], values['type'])
         self.assertEqual(expected, actual)
+
+    def test_can_correctly_unpack_values(self):
+        message_protocol = self._create_protocol()
+        message_handler = protocol.MessageHandler({2: message_protocol})
+        packing, expected = self._create_packed_example()
+        packing = packing[1:]
+        message_handler.update_protocol(2)
+        message_handler.receive_bytes(packing)
+        self.assertTrue(message_handler.is_done_obtaining_values())
+        values = message_handler.get_values()
+        self.assertEqual(expected, values)
+
+
 
 
 if __name__ == '__main__':
