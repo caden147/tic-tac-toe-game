@@ -274,7 +274,7 @@ class MessageHandler:
     def _advance_field(self):
         if self.field_index >= 0:
             if self.protocol.is_field_fixed_length(self.field_index):
-                name = self.protocol.self.compute_field_name(self.field_index)
+                name = self.protocol.compute_field_name(self.field_index)
                 value = self.protocol.unpack_fixed_length_field(
                     self.field_index,
                     self.bytes,
@@ -291,7 +291,7 @@ class MessageHandler:
             self.values[name] = value
         self.field_index += 1
         if self.protocol.is_field_fixed_length(self.field_index):
-            self.next_expected_size = self.protocol.compute_fixed_length_field_length()
+            self.next_expected_size = self.protocol.compute_fixed_length_field_length(self.field_index)
         else:
             self.next_expected_size = None
         if self.field_index >= self.protocol.get_number_of_fields():
@@ -313,6 +313,7 @@ class MessageHandler:
                 self.bytes_index
             )
             self.bytes_index += self.protocol.compute_variable_length_field_max_size(self.field_index)
+            self._update_values_based_on_variable_length_protocol()
 
     def update_values(self):
         if self.protocol.is_fixed_length():
