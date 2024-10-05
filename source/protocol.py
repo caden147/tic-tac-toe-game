@@ -105,6 +105,7 @@ class FixedLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
         self.type_code = type_code
         self.fields = fields
+        self.size = self._compute_size()
 
     def compute_fields_string(self):
         text = ">"
@@ -128,12 +129,15 @@ class FixedLengthMessageProtocol(MessageProtocol):
     def get_type_code(self):
         return self.type_code
     
-    def compute_size(self):
+    def _compute_size(self):
         """Returns the size in bytes of a message using the protocol"""
         size = 0
         for i in range(len(self.fields)):
             size += self.fields[i].get_size()
         return size
+    
+    def get_size(self):
+        return self.size
 
 class VariableLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
@@ -182,6 +186,10 @@ class VariableLengthMessageProtocol(MessageProtocol):
         length = self.compute_fixed_length_field_length(i)
         relevant_bytes = input_bytes[starting_index: starting_index + length]
         return struct.unpack(">" + field.compute_struct_text(), relevant_bytes)[0]
+    
+    def compute_field_name(self, i):
+        field = self.fields[i]
+        return field.get_name()
 
 class ProtocolMap:
     """Maps between type codes and protocols"""
@@ -199,3 +207,85 @@ class ProtocolMap:
         """Returns true if the map has a protocol with the specified type code and false otherwise"""
         return code in self.map
     
+class MessageHandler:
+    def __init__(self, protocol_map: ProtocolMap):
+        self.protocol_map = protocol_map
+        self.initialize()
+    
+    def initialize(self, protocol = None):
+        self.bytes = None
+        self.protocol: MessageProtocol = protocol
+        self.values = {}
+        self.field_index = -1
+        self.bytes_index = 0
+        self.next_expected_size = None
+        self.is_done = False
+
+    def update_bytes(self, input_bytes):
+        if self.bytes:
+            self.bytes += input_bytes
+        else:
+            self.bytes = input_bytes
+
+    def _update_values_based_on_fixed_length_protocol(self):
+        if len(self.bytes) >= self.protocol.get_size():
+            self.values = self.protocol.unpack(self.bytes)
+            self.is_done = True
+
+    def _advance_field(self):
+        if self.field_index >= 0:
+            if self.protocol.is_field_fixed_length(self.field_index):
+                name = self.protocol.self.compute_field_name(self.field_index)
+                value = self.protocol.unpack_fixed_length_field(
+                    self.field_index,
+                    self.bytes,
+                    self.bytes_index
+                )
+            else:
+                name = self.protocol.self.compute_field_name(self.field_index)
+                value = self.protocol.unpack_variable_length_field(
+                    self.field_index,
+                    self.next_expected_size,
+                    self.bytes_index
+                )
+            self.values[name] = value
+        self.field_index += 1
+        if self.protocol.is_field_fixed_length(self.field_index):
+            self.next_expected_size = self.protocol.compute_fixed_length_field_length()
+        else:
+            self.next_expected_size = None
+
+    def _update_values_based_on_variable_length_protocol(self):
+        if not self.field_index:
+            self._advance_field()
+        number_of_new_bytes = len(self.bytes) - self.bytes_index
+        if self.next_expected_size:
+            if number_of_new_bytes >= self.next_expected_size:
+                pass
+        elif number_of_new_bytes >= self.protocol.compute_variable_length_field_max_size(self.field_index):
+            self.next_expected_size = self.protocol.unpack_field_length(
+                self.field_index,
+                self.bytes,
+                self.bytes_index
+            )
+
+
+    def update_values(self):
+        if self.protocol.is_fixed_length():
+            self._update_values_based_on_fixed_length_protocol()
+        else:
+            self._update_values_based_on_variable_length_protocol()
+
+    def receive_bytes(self, input_bytes):
+        self.update_bytes(input_bytes)
+        self.update_values()
+
+    def update_protocol(self, type_code):
+        protocol = self.protocol_map[type_code]
+        self.initialize(protocol)
+
+    def is_done_obtaining_values(self):
+        return self.is_done
+
+    def get_values(self):
+        return self.values
