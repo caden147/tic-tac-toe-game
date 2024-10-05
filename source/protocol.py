@@ -301,7 +301,6 @@ class MessageHandler:
 
     def _update_values_based_on_variable_length_protocol(self):
         if self.field_index < 0:
-            print('advancing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             self._advance_field()
         number_of_new_bytes = len(self.bytes) - self.bytes_index
         if self.next_expected_size:
@@ -313,6 +312,7 @@ class MessageHandler:
                 self.bytes,
                 self.bytes_index
             )
+            self.bytes_index += self.protocol.compute_variable_length_field_max_size(self.field_index)
 
     def update_values(self):
         if self.protocol.is_fixed_length():
