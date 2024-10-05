@@ -15,7 +15,7 @@ class TestMessageProtocol(unittest.TestCase):
         self.assertFalse(protocol.is_fixed_length())
 
     def test_correctly_unpacks_field_length(self):
-        field_length = struct.pack(">I", 20)
+        field_length = struct.pack(">H", 20)
         protocol = self._create_protocol()
         unpacked_field_length = protocol.unpack_field_length(0, field_length, 0)
         self.assertEqual(unpacked_field_length, 20)
@@ -31,7 +31,7 @@ class TestMessageProtocol(unittest.TestCase):
     def test_gives_correct_field_information(self):
         protocol = self._create_protocol()
         expected_field_name = "text"
-        expected_max_size = 4
+        expected_max_size = 2
         self.assertTrue(protocol.is_last_field(0))
         self.assertEqual(protocol.compute_variable_length_field_max_size(0), expected_max_size)
         self.assertEqual(protocol.compute_field_name(0), expected_field_name)
@@ -41,7 +41,7 @@ class TestMessageProtocol(unittest.TestCase):
         text = "testing"
         encoded_text = text.encode("utf-8")
         text_length = len(encoded_text)
-        expected = struct.pack(">BI" + str(text_length) + "s", 0, text_length, encoded_text)
+        expected = struct.pack(">BH" + str(text_length) + "s", 0, text_length, encoded_text)
         packed_text = protocol.pack(text)
         self.assertEqual(expected, packed_text)
 

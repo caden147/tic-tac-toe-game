@@ -344,7 +344,7 @@ class ProtocolCallbackHandler:
         return protocol_type_code in self.callbacks
 
 def create_text_message_protocol(type_code: int):
-    field = create_string_protocol_field("text", 4)
+    field = create_string_protocol_field("text", 2)
     protocol = VariableLengthMessageProtocol(type_code, [field])
     return protocol
 
