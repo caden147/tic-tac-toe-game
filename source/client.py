@@ -9,34 +9,27 @@ import os
 
 import libclient
 import logging_utilities
+import protocol_definitions
 
 sel = selectors.DefaultSelector()
 os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
 
 def create_request(action, value):
-    if action == "search":
-        return dict(
-            type="text/json",
-            encoding="utf-8",
-            content=dict(action=action, value=value),
-        )
-    else:
-        return dict(
-            type="binary/custom-client-binary-type",
-            encoding="binary",
-            content=bytes(action + value, encoding="utf-8"),
-        )
+    if action == "help":
+        if value:
+            return protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODES, (value,)
+        else:
+            return protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE, []
 
-
-def start_connection(host, port, request):
+def start_connection(host, port, type_code, request):
     addr = (host, port)
     print("starting connection to", addr)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(False)
     sock.connect_ex(addr)
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    message = libclient.Message(sel, sock, addr, request)
+    message = libclient.Message(sel, sock, addr, type_code, request)
     sel.register(sock, events, data=message)
 
 
@@ -46,8 +39,8 @@ if len(sys.argv) != 5:
 
 host, port = sys.argv[1], int(sys.argv[2])
 action, value = sys.argv[3], sys.argv[4]
-request = create_request(action, value)
-start_connection(host, port, request)
+request, type_code = create_request(action, value)
+start_connection(host, port, type_code, request)
 
 try:
     while True:

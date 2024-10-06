@@ -4,19 +4,24 @@ import selectors
 import io
 import struct
 
-from source import protocol, protocol_definitions
+import protocol
+import protocol_definitions
+
+
 
 
 class Message:
-    def __init__(self, selector, sock, addr, request):
+    def __init__(self, selector, sock, addr, type_code, request):
         self.selector = selector
         self.sock = sock
         self.addr = addr
         self.request = request
+        self.initial_type_code = type_code
         self._recv_buffer = b""
         self._send_buffer = b""
         self._request_queued = False
         self.response = None
+        self.message_handler = protocol.MessageHandler(protocol_definitions.CLIENT_PROTOCOL_MAP)
 
     def _set_selector_events_mask(self, mode):
         """Set selector to listen for events: mode is 'r', 'w', or 'rw'."""
@@ -61,10 +66,6 @@ class Message:
         message = protocol_definitions.SERVER_PROTOCOL_MAP.pack_values_given_type_code(type_code, content_bytes)
         return message
 
-    def _process_response_binary_content(self):
-        content = self.response
-        print(f"got response: {repr(content)}")
-
     def process_events(self, mask):
         if mask & selectors.EVENT_READ:
             self.read()
@@ -74,11 +75,11 @@ class Message:
     def read(self):
         self._read()
 
-        if self.request_type_code is None:
-            self.process_request_type_code()
+        if self.response_type_code is None:
+            self.process_response_type_code()
 
-        if self.request is None:
-            self.process_request()
+        if self.response is None:
+            self.process_response()
 
     def write(self):
         if not self._request_queued:
@@ -86,10 +87,9 @@ class Message:
 
         self._write()
 
-        if self._request_queued:
-            if not self._send_buffer:
-                # Set selector to listen for read events, we're done writing.
-                self._set_selector_events_mask("r")
+        if self._request_queued and not self._send_buffer:
+            # Set selector to listen for read events, we're done writing.
+            self._set_selector_events_mask("r")
 
     def close(self):
         print("closing connection to", self.addr)
@@ -113,15 +113,7 @@ class Message:
             self.sock = None
 
     def queue_request(self):
-        content = self.request["content"]
-        content_type = self.request["type"]
-        content_encoding = self.request["encoding"]
-        req = {
-                "content_bytes": content,
-                "content_type": content_type,
-                "content_encoding": content_encoding,
-            }
-        message = self._create_message(**req)
+        message = self._create_message(*self.request)
         self._send_buffer += message
         self._request_queued = True
 
@@ -133,22 +125,17 @@ class Message:
 
     def process_response(self):
         is_done = False
-        if protocol_definitions.SERVER_PROTOCOL_MAP.get_protocol_with_type_code(self.request_type_code).get_number_of_fields() == 0:
+        if protocol_definitions.CLIENT_PROTOCOL_MAP.get_protocol_with_type_code(self.request_type_code).get_number_of_fields() == 0:
             is_done = True
-            self.request = {}
+            self.response = {}
         else:
             self.message_handler.receive_bytes(self._recv_buffer)
             if self.message_handler.is_done_obtaining_values():
                 is_done = True
-                self.request = self.message_handler.get_values()
+                self.response = self.message_handler.get_values()
             else:
                 self._recv_buffer = b""
-        content_length = self.message_handler.get_number_of_bytes_extracted()
         if is_done:
-            if len(self._recv_buffer) > 0:
-                self._recv_buffer = self._recv_buffer[content_length:]
-            print("received request with type code", self.response_type_code, repr(self.request), "from", self.addr)
-            # Set selector to listen for write events, we're done reading.
-            self._set_selector_events_mask("w")
-        # Close when response has been processed
-        self.close()
+            print("received response with type code", self.response_type_code, repr(self.response), "from", self.addr)
+            # Close when response has been processed
+            self.close()
