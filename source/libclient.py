@@ -1,9 +1,10 @@
 
 import sys
 import selectors
-import json
 import io
 import struct
+
+from source import protocol, protocol_definitions
 
 
 class Message:
@@ -15,8 +16,6 @@ class Message:
         self._recv_buffer = b""
         self._send_buffer = b""
         self._request_queued = False
-        self._jsonheader_len = None
-        self.jsonheader = None
         self.response = None
 
     def _set_selector_events_mask(self, mode):
@@ -56,35 +55,11 @@ class Message:
             else:
                 self._send_buffer = self._send_buffer[sent:]
 
-    def _json_encode(self, obj, encoding):
-        return json.dumps(obj, ensure_ascii=False).encode(encoding)
-
-    def _json_decode(self, json_bytes, encoding):
-        tiow = io.TextIOWrapper(
-            io.BytesIO(json_bytes), encoding=encoding, newline=""
-        )
-        obj = json.load(tiow)
-        tiow.close()
-        return obj
-
     def _create_message(
-        self, *, content_bytes, content_type, content_encoding
+        self, *, type_code, content_bytes
     ):
-        jsonheader = {
-            "byteorder": sys.byteorder,
-            "content-type": content_type,
-            "content-encoding": content_encoding,
-            "content-length": len(content_bytes),
-        }
-        jsonheader_bytes = self._json_encode(jsonheader, "utf-8")
-        message_hdr = struct.pack(">H", len(jsonheader_bytes))
-        message = message_hdr + jsonheader_bytes + content_bytes
+        message = protocol_definitions.SERVER_PROTOCOL_MAP.pack_values_given_type_code(type_code, content_bytes)
         return message
-
-    def _process_response_json_content(self):
-        content = self.response
-        result = content.get("result")
-        print(f"got result: {result}")
 
     def _process_response_binary_content(self):
         content = self.response
@@ -99,16 +74,11 @@ class Message:
     def read(self):
         self._read()
 
-        if self._jsonheader_len is None:
-            self.process_protoheader()
+        if self.request_type_code is None:
+            self.process_request_type_code()
 
-        if self._jsonheader_len is not None:
-            if self.jsonheader is None:
-                self.process_jsonheader()
-
-        if self.jsonheader:
-            if self.response is None:
-                self.process_response()
+        if self.request is None:
+            self.process_request()
 
     def write(self):
         if not self._request_queued:
@@ -146,14 +116,7 @@ class Message:
         content = self.request["content"]
         content_type = self.request["type"]
         content_encoding = self.request["encoding"]
-        if content_type == "text/json":
-            req = {
-                "content_bytes": self._json_encode(content, content_encoding),
-                "content_type": content_type,
-                "content_encoding": content_encoding,
-            }
-        else:
-            req = {
+        req = {
                 "content_bytes": content,
                 "content_type": content_type,
                 "content_encoding": content_encoding,
@@ -162,48 +125,30 @@ class Message:
         self._send_buffer += message
         self._request_queued = True
 
-    def process_protoheader(self):
-        hdrlen = 2
-        if len(self._recv_buffer) >= hdrlen:
-            self._jsonheader_len = struct.unpack(
-                ">H", self._recv_buffer[:hdrlen]
-            )[0]
-            self._recv_buffer = self._recv_buffer[hdrlen:]
-
-    def process_jsonheader(self):
-        hdrlen = self._jsonheader_len
-        if len(self._recv_buffer) >= hdrlen:
-            self.jsonheader = self._json_decode(
-                self._recv_buffer[:hdrlen], "utf-8"
-            )
-            self._recv_buffer = self._recv_buffer[hdrlen:]
-            for reqhdr in (
-                "byteorder",
-                "content-length",
-                "content-type",
-                "content-encoding",
-            ):
-                if reqhdr not in self.jsonheader:
-                    raise ValueError(f'Missing required header "{reqhdr}".')
+    def process_response_type_code(self):
+        if len(self._recv_buffer) >= protocol.TYPE_CODE_SIZE:
+            self.request_type_code = protocol.unpack_type_code_from_message(self._recv_buffer)
+            self._recv_buffer = protocol.compute_message_after_type_code(self.request_type_code)
+            self.message_handler.update_protocol(self.request_type_code)
 
     def process_response(self):
-        content_len = self.jsonheader["content-length"]
-        if not len(self._recv_buffer) >= content_len:
-            return
-        data = self._recv_buffer[:content_len]
-        self._recv_buffer = self._recv_buffer[content_len:]
-        if self.jsonheader["content-type"] == "text/json":
-            encoding = self.jsonheader["content-encoding"]
-            self.response = self._json_decode(data, encoding)
-            print("received response", repr(self.response), "from", self.addr)
-            self._process_response_json_content()
+        is_done = False
+        if protocol_definitions.SERVER_PROTOCOL_MAP.get_protocol_with_type_code(self.request_type_code).get_number_of_fields() == 0:
+            is_done = True
+            self.request = {}
         else:
-            # Binary or unknown content-type
-            self.response = data
-            print(
-                f'received {self.jsonheader["content-type"]} response from',
-                self.addr,
-            )
-            self._process_response_binary_content()
+            self.message_handler.receive_bytes(self._recv_buffer)
+            if self.message_handler.is_done_obtaining_values():
+                is_done = True
+                self.request = self.message_handler.get_values()
+            else:
+                self._recv_buffer = b""
+        content_length = self.message_handler.get_number_of_bytes_extracted()
+        if is_done:
+            if len(self._recv_buffer) > 0:
+                self._recv_buffer = self._recv_buffer[content_length:]
+            print("received request with type code", self.response_type_code, repr(self.request), "from", self.addr)
+            # Set selector to listen for write events, we're done reading.
+            self._set_selector_events_mask("w")
         # Close when response has been processed
         self.close()
