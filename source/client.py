@@ -18,7 +18,7 @@ logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
 def create_request(action, value):
     if action == "help":
         if value:
-            return protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODES, (value,)
+            return protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE, (value,)
         else:
             return protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE, []
 
