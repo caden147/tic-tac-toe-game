@@ -14,6 +14,15 @@ help_messages = {
     "setup": "When the server supports tictactoe games, you will create a game with the create command and join a game with the join command."
 }
 
+protocol_callback_handler = protocol.ProtocolCallbackHandler()
+def create_help_message(label: str = ""):
+    if label in help_messages:
+        return (help_messages[label],)
+    else:
+        return (f"Did not recognize help topic {label}!\n{help_messages[""]}",)
+protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
+
 class Message:
     def __init__(self, selector, sock, addr):
         self.selector = selector
@@ -142,6 +151,7 @@ class Message:
             self._set_selector_events_mask("w")
 
     def create_response(self):
-        message = self._create_response_binary_content()
+        message_values = protocol_callback_handler.pass_values_to_protocol_callback(self.request, self.request_type_code)
+        message = protocol_definitions.CLIENT_PROTOCOL_MAP.pack_values_given_type_code(self.request_type_code, message_values)
         self.response_created = True
         self._send_buffer += message
