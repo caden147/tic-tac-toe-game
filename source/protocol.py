@@ -168,6 +168,9 @@ class FixedLengthMessageProtocol(MessageProtocol):
     def get_number_of_fields(self):
         return len(self.fields)
 
+def create_fieldless_message_protocol(type_code):
+    return FixedLengthMessageProtocol(type_code, [])
+
 class VariableLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
         self.type_code = type_code
@@ -344,6 +347,9 @@ class MessageHandler:
 
     def get_values(self):
         return self.values
+    
+    def get_number_of_bytes_extracted(self):
+        return self.bytes_index
 
 class ProtocolCallbackHandler:
     def __init__(self):
