@@ -14,14 +14,14 @@ os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
 
 help_messages = {
-    "": "The server will offer support for tictac to games in the future. Help topics include\ngameplay\nsetup\n",
+    "": "The server will offer support for tictactoe games in the future. Help topics include\ngameplay\nsetup\n",
     "gameplay": "When the server supports tictactoe games, you submit your move by typing the coordinates for a position and pressing enter.",
     "setup": "When the server supports tictactoe games, you will create a game with the create command and join a game with the join command."
 }
 
 protocol_callback_handler = protocol.ProtocolCallbackHandler()
 def create_help_message(values):
-    label: str = values["text"]
+    label: str = values.get("text", "")
     if label in help_messages:
         return (help_messages[label],)
     else:
@@ -103,10 +103,8 @@ class Message:
             self.process_request()
 
     def write(self):
-        if self.request:
-            if not self.response_created:
-                self.create_response()
-
+        if self.request is not None and not self.response_created:
+            self.create_response()
         self._write()
 
     def close(self):
