@@ -126,6 +126,19 @@ class MessageProtocol:
     def get_number_of_fields(self):
         pass
 
+class TypeCodeOnlyMessageProtocol(MessageProtocol):
+    def __init__(self, type_code):
+        self.type_code = type_code
+    
+    def get_type_code(self):
+        return self.type_code
+
+    def get_number_of_fields(self):
+        return 0
+
+    def pack(self, *args):
+        return pack_type_code(self.type_code)
+
 class FixedLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
         self.type_code = type_code
@@ -167,6 +180,9 @@ class FixedLengthMessageProtocol(MessageProtocol):
 
     def get_number_of_fields(self):
         return len(self.fields)
+
+def create_fieldless_message_protocol(type_code):
+    return TypeCodeOnlyMessageProtocol(type_code)
 
 class VariableLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
@@ -344,6 +360,9 @@ class MessageHandler:
 
     def get_values(self):
         return self.values
+    
+    def get_number_of_bytes_extracted(self):
+        return self.bytes_index
 
 class ProtocolCallbackHandler:
     def __init__(self):
@@ -352,8 +371,11 @@ class ProtocolCallbackHandler:
     def register_callback_with_protocol(self, callback, protocol_type_code):
         self.callbacks[protocol_type_code] = callback
     
-    def pass_values_to_protocol_callback(self, values, protocol_type_code, connection_information):
-        self.callbacks[protocol_type_code](values, connection_information)
+    def pass_values_to_protocol_callback_with_connection_information(self, values, protocol_type_code, connection_information):
+        return self.callbacks[protocol_type_code](values, connection_information)
+
+    def pass_values_to_protocol_callback(self, values, protocol_type_code):
+        return self.callbacks[protocol_type_code](values)
 
     def has_protocol(self, protocol_type_code):
         return protocol_type_code in self.callbacks
