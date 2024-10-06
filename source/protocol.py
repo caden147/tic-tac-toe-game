@@ -358,8 +358,11 @@ class ProtocolCallbackHandler:
     def register_callback_with_protocol(self, callback, protocol_type_code):
         self.callbacks[protocol_type_code] = callback
     
-    def pass_values_to_protocol_callback(self, values, protocol_type_code, connection_information):
-        self.callbacks[protocol_type_code](values, connection_information)
+    def pass_values_to_protocol_callback_with_connection_information(self, values, protocol_type_code, connection_information):
+        return self.callbacks[protocol_type_code](values, connection_information)
+
+    def pass_values_to_protocol_callback(self, values, protocol_type_code):
+        return self.callbacks[protocol_type_code](values)
 
     def has_protocol(self, protocol_type_code):
         return protocol_type_code in self.callbacks
