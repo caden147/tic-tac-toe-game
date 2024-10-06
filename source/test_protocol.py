@@ -237,5 +237,30 @@ class TestMessageHandler(unittest.TestCase):
         values, names = self._create_more_complex_values_and_names()
         self._assert_handles_single_byte_at_a_time_given_map_values_and_names(protocol_map, values, names)
 
+class TestTypeCodeOnlyMessageProtocol(unittest.TestCase):
+    def _create_protocol(self):
+        return protocol.create_fieldless_message_protocol(9)
+
+    def test_returns_correct_type_code(self):
+        expected = 9
+        actual = self._create_protocol().get_type_code()
+        self.assertEqual(expected, actual)
+
+    def test_has_no_fields(self):
+        expected = 0
+        actual = self._create_protocol().get_number_of_fields()
+        self.assertEqual(expected, actual)
+
+    def test_packs_correctly(self):
+        expected = struct.pack(">B", 9)
+        actual = self._create_protocol().pack()
+        self.assertEqual(expected, actual)
+
+    def test_protocol_map_packs_correctly(self):
+        simple_map = protocol.ProtocolMap([self._create_protocol()])
+        expected = struct.pack(">B", 9)
+        actual = simple_map.pack_values_given_type_code(9, {})
+        self.assertEqual(expected, actual)
+
 if __name__ == '__main__':
     unittest.main()
