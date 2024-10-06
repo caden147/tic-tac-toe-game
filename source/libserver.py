@@ -47,7 +47,7 @@ class Message:
             pass
         else:
             if data:
-                self._recv_buffer = data
+                self._recv_buffer += data
             else:
                 raise RuntimeError("Peer closed.")
 
@@ -131,6 +131,8 @@ class Message:
             if self.message_handler.is_done_obtaining_values():
                 is_done = True
                 self.request = self.message_handler.get_values()
+            else:
+                self._recv_buffer = b""
         content_length = self.message_handler.get_number_of_bytes_extracted()
         if is_done:
             if len(self._recv_buffer) > 0:
