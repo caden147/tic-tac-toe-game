@@ -63,7 +63,7 @@ class Message:
     def _create_message(
         self
     ):
-        message = protocol_definitions.SERVER_PROTOCOL_MAP.pack_values_given_type_code(self.initial_type_code, self.request)
+        message = protocol_definitions.SERVER_PROTOCOL_MAP.pack_values_given_type_code(self.initial_type_code, *self.request)
         return message
 
     def process_events(self, mask):
