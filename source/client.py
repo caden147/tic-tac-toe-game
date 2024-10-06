@@ -39,7 +39,7 @@ if len(sys.argv) != 5:
 
 host, port = sys.argv[1], int(sys.argv[2])
 action, value = sys.argv[3], sys.argv[4]
-request, type_code = create_request(action, value)
+type_code, request = create_request(action, value)
 start_connection(host, port, type_code, request)
 
 try:

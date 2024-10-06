@@ -61,9 +61,9 @@ class Message:
                 self._send_buffer = self._send_buffer[sent:]
 
     def _create_message(
-        self, *, type_code, content_bytes
+        self
     ):
-        message = protocol_definitions.SERVER_PROTOCOL_MAP.pack_values_given_type_code(type_code, content_bytes)
+        message = protocol_definitions.SERVER_PROTOCOL_MAP.pack_values_given_type_code(self.initial_type_code, self.request)
         return message
 
     def process_events(self, mask):
@@ -113,7 +113,7 @@ class Message:
             self.sock = None
 
     def queue_request(self):
-        message = self._create_message(*self.request)
+        message = self._create_message()
         self._send_buffer += message
         self._request_queued = True
 
