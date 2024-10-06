@@ -4,9 +4,14 @@ import selectors
 import json
 import io
 import struct
+import os
 
 import protocol
 import protocol_definitions
+import logging_utilities
+
+os.makedirs("logs", exist_ok=True)
+logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
 
 help_messages = {
     "": "The server will offer support for tictac to games in the future. Help topics include\ngameplay\nsetup\n",
@@ -62,7 +67,7 @@ class Message:
 
     def _write(self):
         if self._send_buffer:
-            print("sending", repr(self._send_buffer), "to", self.addr)
+            logger.log_message(f"sending {repr(self._send_buffer)} to {self.addr}")
             try:
                 # Should be ready to write
                 sent = self.sock.send(self._send_buffer)
@@ -104,22 +109,15 @@ class Message:
         self._write()
 
     def close(self):
-        print("closing connection to", self.addr)
+        logger.log_message(f"closing connection to {self.addr}")
         try:
             self.selector.unregister(self.sock)
         except Exception as e:
-            print(
-                f"error: selector.unregister() exception for",
-                f"{self.addr}: {repr(e)}",
-            )
-
+            logger.log_message(f"error: selector.unregister() exception for {self.addr}: {repr(e)}")
         try:
             self.sock.close()
         except OSError as e:
-            print(
-                f"error: socket.close() exception for",
-                f"{self.addr}: {repr(e)}",
-            )
+            logger.log_message(f"error: socket.close() exception for {self.addr}: {repr(e)}")
         finally:
             # Delete reference to socket object for garbage collection
             self.sock = None
