@@ -126,6 +126,19 @@ class MessageProtocol:
     def get_number_of_fields(self):
         pass
 
+class TypeCodeOnlyMessageProtocol(MessageProtocol):
+    def __init__(self, type_code):
+        self.type_code = type_code
+    
+    def get_type_code(self):
+        return self.type_code
+
+    def get_number_of_fields(self):
+        return 0
+
+    def pack(self, *args):
+        return pack_type_code(self.type_code)
+
 class FixedLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):
         self.type_code = type_code
@@ -169,7 +182,7 @@ class FixedLengthMessageProtocol(MessageProtocol):
         return len(self.fields)
 
 def create_fieldless_message_protocol(type_code):
-    return FixedLengthMessageProtocol(type_code, [])
+    return TypeCodeOnlyMessageProtocol(type_code)
 
 class VariableLengthMessageProtocol(MessageProtocol):
     def __init__(self, type_code, fields):

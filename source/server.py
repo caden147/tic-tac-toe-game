@@ -7,16 +7,13 @@ import selectors
 import traceback
 
 import libserver
-import logging_utilities
-import os
 
 sel = selectors.DefaultSelector()
-os.makedirs("logs", exist_ok=True)
-logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
+
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read
-    print("accepted connection from", addr)
+    libserver.logger.log_message(f"accepted connection from {addr}")
     conn.setblocking(False)
     message = libserver.Message(sel, conn, addr)
     sel.register(conn, selectors.EVENT_READ, data=message)
@@ -47,7 +44,7 @@ try:
                 try:
                     message.process_events(mask)
                 except Exception:
-                    logger.log_message(
+                    libserver.logger.log_message(
                         f"main: error: exception for {message.addr}:\n{traceback.format_exc()}",
                     )
                     message.close()
