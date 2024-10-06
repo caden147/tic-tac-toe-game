@@ -20,7 +20,8 @@ help_messages = {
 }
 
 protocol_callback_handler = protocol.ProtocolCallbackHandler()
-def create_help_message(label: str = ""):
+def create_help_message(values):
+    label: str = values["text"]
     if label in help_messages:
         return (help_messages[label],)
     else:
@@ -150,6 +151,6 @@ class Message:
 
     def create_response(self):
         message_values = protocol_callback_handler.pass_values_to_protocol_callback(self.request, self.request_type_code)
-        message = protocol_definitions.CLIENT_PROTOCOL_MAP.pack_values_given_type_code(self.request_type_code, message_values)
+        message = protocol_definitions.CLIENT_PROTOCOL_MAP.pack_values_given_type_code(self.request_type_code, *message_values)
         self.response_created = True
         self._send_buffer += message

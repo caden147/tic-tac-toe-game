@@ -22,6 +22,7 @@ class Message:
         self._request_queued = False
         self.response = None
         self.message_handler = protocol.MessageHandler(protocol_definitions.CLIENT_PROTOCOL_MAP)
+        self.response_type_code = None
 
     def _set_selector_events_mask(self, mode):
         """Set selector to listen for events: mode is 'r', 'w', or 'rw'."""
@@ -119,13 +120,13 @@ class Message:
 
     def process_response_type_code(self):
         if len(self._recv_buffer) >= protocol.TYPE_CODE_SIZE:
-            self.request_type_code = protocol.unpack_type_code_from_message(self._recv_buffer)
+            self.response_type_code = protocol.unpack_type_code_from_message(self._recv_buffer)
             self._recv_buffer = protocol.compute_message_after_type_code(self._recv_buffer)
-            self.message_handler.update_protocol(self.request_type_code)
+            self.message_handler.update_protocol(self.response_type_code)
 
     def process_response(self):
         is_done = False
-        if protocol_definitions.CLIENT_PROTOCOL_MAP.get_protocol_with_type_code(self.request_type_code).get_number_of_fields() == 0:
+        if protocol_definitions.CLIENT_PROTOCOL_MAP.get_protocol_with_type_code(self.response_type_code).get_number_of_fields() == 0:
             is_done = True
             self.response = {}
         else:
