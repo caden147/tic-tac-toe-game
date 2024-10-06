@@ -35,7 +35,7 @@ class Message:
         self.addr = addr
         self._recv_buffer = b""
         self._send_buffer = b""
-        self.request_type_code
+        self.request_type_code = None
         self.request = None
         self.message_handler = protocol.MessageHandler(protocol_definitions.SERVER_PROTOCOL_MAP)
         self.response_created = False
