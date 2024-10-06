@@ -125,7 +125,7 @@ class Message:
     def process_request_type_code(self):
         if len(self._recv_buffer) >= protocol.TYPE_CODE_SIZE:
             self.request_type_code = protocol.unpack_type_code_from_message(self._recv_buffer)
-            self._recv_buffer = protocol.compute_message_after_type_code(self.request_type_code)
+            self._recv_buffer = protocol.compute_message_after_type_code(self._recv_buffer)
             self.message_handler.update_protocol(self.request_type_code)
 
     def process_request(self):
