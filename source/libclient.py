@@ -1,14 +1,17 @@
 
 import sys
 import selectors
+import json
 import io
 import struct
+import os
 
 import protocol
 import protocol_definitions
+import logging_utilities
 
-
-
+os.makedirs("logs", exist_ok=True)
+logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
 
 class Message:
     def __init__(self, selector, sock, addr, type_code, request):
@@ -51,7 +54,7 @@ class Message:
 
     def _write(self):
         if self._send_buffer:
-            print("sending", repr(self._send_buffer), "to", self.addr)
+            logger.log_message(f"sending {repr(self._send_buffer)} to {self.addr}")
             try:
                 # Should be ready to write
                 sent = self.sock.send(self._send_buffer)
@@ -93,11 +96,11 @@ class Message:
             self._set_selector_events_mask("r")
 
     def close(self):
-        print("closing connection to", self.addr)
+        logger.log_message(f"closing connection to {self.addr}")
         try:
             self.selector.unregister(self.sock)
         except Exception as e:
-            print(
+            logger.log_message(
                 f"error: selector.unregister() exception for",
                 f"{self.addr}: {repr(e)}",
             )
@@ -105,7 +108,7 @@ class Message:
         try:
             self.sock.close()
         except OSError as e:
-            print(
+            logger.log_message(
                 f"error: socket.close() exception for",
                 f"{self.addr}: {repr(e)}",
             )
