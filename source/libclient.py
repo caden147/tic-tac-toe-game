@@ -50,6 +50,7 @@ class Message:
         except OSError as exception:
             print('Error: A Connection Failure Occurred!')
             logger.log_message(f"{exception} trying to connect to {self.addr}")
+            self.close()
         else:
             if data:
                 self._recv_buffer += data
@@ -68,6 +69,7 @@ class Message:
             except OSError as exception:
                 print("Error: A Connection Failure Occurred!")
                 logger.log_message(f"{exception} trying to connect to {self.addr}")
+                self.close()
             else:
                 self._send_buffer = self._send_buffer[sent:]
 
