@@ -42,10 +42,15 @@ class Message:
     def _read(self):
         try:
             # Should be ready to read
-            data = self.sock.recv(4096)
+            if self.sock:
+                data = self.sock.recv(4096)
         except BlockingIOError:
             # Resource temporarily unavailable (errno EWOULDBLOCK)
             pass
+        except OSError as exception:
+            print('Error: A Connection Failure Occurred!')
+            logger.log_message(f"{exception} trying to connect to {self.addr}")
+            self.close()
         else:
             if data:
                 self._recv_buffer += data
@@ -61,6 +66,10 @@ class Message:
             except BlockingIOError:
                 # Resource temporarily unavailable (errno EWOULDBLOCK)
                 pass
+            except OSError as exception:
+                print("Error: A Connection Failure Occurred!")
+                logger.log_message(f"{exception} trying to connect to {self.addr}")
+                self.close()
             else:
                 self._send_buffer = self._send_buffer[sent:]
 
@@ -103,7 +112,8 @@ class Message:
             logger.log_message(f"error: selector.unregister() exception for {self.addr}: {repr(e)}")
 
         try:
-            self.sock.close()
+            if self.sock:
+                self.sock.close()
         except OSError as e:
             logger.log_message(f"error: socket.close() exception for {self.addr}: {repr(e)}")
         finally:
