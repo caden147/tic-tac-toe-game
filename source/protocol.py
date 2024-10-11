@@ -268,11 +268,23 @@ class ProtocolMap:
         return result
     
 class MessageHandler:
+    """
+        A message handler object is used to parse bytes being sent as part of a message utilizing a protocol map.
+        This handles when are not all sent at the same time.
+        protocol_map: a protocol map object containing message protocols that the handler should handle.
+        How to use:
+            Upon receiving a message, you must parse the type code using something other than the message handler
+            and then pass it to the handler using the update_protocol method with the protocol code.
+            Pass bytes after the type code to the message handler using the receive_bytes method.
+            Figure out if the handler is done parsing the message or needs more bites using the is_done_obtaining_values method.
+            Get the parse values as a dictionary using the get_values method.
+            Get the number of bytes that were extracted as part of the message using the get_number_of_bytes_extracted method.
+    """
     def __init__(self, protocol_map: ProtocolMap):
         self.protocol_map = protocol_map
-        self.initialize()
+        self._initialize()
     
-    def initialize(self, protocol = None):
+    def _initialize(self, protocol = None):
         self.bytes = None
         self.protocol: MessageProtocol = protocol
         self.values = {}
@@ -281,7 +293,7 @@ class MessageHandler:
         self.next_expected_size = None
         self.is_done = False
 
-    def update_bytes(self, input_bytes):
+    def _update_bytes(self, input_bytes):
         if self.bytes:
             self.bytes += input_bytes
         else:
@@ -341,19 +353,19 @@ class MessageHandler:
             self.bytes_index += self.protocol.compute_variable_length_field_max_size(self.field_index)
             self._update_values_based_on_variable_length_protocol()
 
-    def update_values(self):
+    def _update_values(self):
         if self.protocol.is_fixed_length():
             self._update_values_based_on_fixed_length_protocol()
         else:
             self._update_values_based_on_variable_length_protocol()
 
     def receive_bytes(self, input_bytes):
-        self.update_bytes(input_bytes)
-        self.update_values()
+        self._update_bytes(input_bytes)
+        self._update_values()
 
     def update_protocol(self, type_code):
         protocol = self.protocol_map.get_protocol_with_type_code(type_code)
-        self.initialize(protocol)
+        self._initialize(protocol)
 
     def is_done_obtaining_values(self):
         return self.is_done
