@@ -2,20 +2,33 @@ import struct
 
 TYPE_CODE_SIZE = 1
 def pack_type_code(type_code: int):
+    """
+        Packs a type code into the an appropriate bite format for transmitting it
+        type_code: the type code
+    """
     return struct.pack(">B", type_code)
 
 def unpack_type_code_from_message(message):
+    """
+        Takes a message in byte format and returns the type code for it
+        message: bytes containing a message created using a message protocol
+    """
     relevant_bytes = message[:TYPE_CODE_SIZE]
     type_code = struct.unpack(">B", relevant_bytes)[0]
     return type_code
 
 def compute_message_after_type_code(message):
+    """
+        Returns the part of a message after its type code.
+        message: bytes containing a message created using a message protocol
+    """
     return message[TYPE_CODE_SIZE:]
 
 def compute_format_representation_for_size(size: int):
     """
         Computes the appropriate format string representation for the size of a field
         size: the desired size in number of bytes
+        Currently only sizes 1, 2, 4 and 8 are supported.
     """
     if size == 1:
         return 'B'
@@ -26,18 +39,27 @@ def compute_format_representation_for_size(size: int):
     elif size == 8:
         return 'L'
     else:
-        raise ValueError("Tried to create byte format string text for invalid size")
+        raise ValueError("Tried to create byte format string text for invalid size! Must be 1, 2, 4, or 8!")
 
 def encode_value(value):
+    """
+        Encodes a value into an appropriate byte format for packing it
+        value: a value to be packed into bytes
+    """
     if type(value) == str:
         return value.encode("utf-8")
     return value
 
 def decode_value(value):
+    """
+        Decodes a value unpacked if it is still in byte format
+        value: an unpacked value that might still be in byte format and need to be decoded
+    """
     if type(value) == bytes:
         return value.decode("utf-8")
     return value
 
+#Unused, untested class
 class ByteStream:
     def __init__(self, input_bytes):
         self.bytes = bytearray(input_bytes)
@@ -57,7 +79,11 @@ class ByteStream:
 
 
 class ProtocolField:
+    """
+        Interface definition for a protocol field. 
+    """
     def get_name(self):
+        """Returns the name of the field"""
         pass
     
     def compute_struct_text(self):
@@ -65,53 +91,65 @@ class ProtocolField:
         pass
 
     def is_fixed_length(self):
+        """Returns true if the field is fixed length and false otherwise"""
         return True
 
 class ConstantLengthProtocolField(ProtocolField):
+    """
+        Defines a constant length protocol field.
+        name: The name of the field.
+        struct_text: the text used with struct to pack and unpack values for this field
+        size: the size of the field in bytes
+    """
+    
     def __init__(self, name: str, struct_text: str, size: int):
         self.name = name
         self.struct_text = struct_text
         self.size = size
 
     def get_name(self):
+        """Returns the name of the field"""
         return self.name
     
     def compute_struct_text(self):
+        """Returns the text used to pack or unpack values of this field with the struct module"""
         return self.struct_text
     
     def get_size(self):
+        """Returns the size of the field in bytes"""
         return self.size
     
 class VariableLengthProtocolField(ProtocolField):
+    """
+        Defines a variable length protocol field. 
+        name: the name of the field.
+        create_struct_text: a function that computes the appropriate text for packing and unpacking values for the field
+        as a function of the field size in bytes.
+        max_size: the maximum size of the field in bytes
+    """
     def __init__(self, name: str, create_struct_text, max_size: int = 1):
         self.name = name
         self.create_struct_text = create_struct_text
         self.max_size = max_size
     
     def get_name(self):
+        """Returns the name of the field"""
         return self.name
     
     def compute_struct_text(self, size):
+        """Returns the text for packing and unpacking values of the field is a function of the size"""
         return self.create_struct_text(size)
     
     def compute_struct_text_from_value(self, value):
+        """Returns the text for packing and unpacking values of the field is a function of the value to pack or unpack"""
         return self.compute_struct_text(len(value))
 
     def get_max_size(self):
+        """Returns the maximum size of the field in bytes"""
         return self.max_size
     
     def is_fixed_length(self):
         return False
-
-def create_string_protocol_field(name, max_size_in_bytes):
-    def create_struct_text(size):
-        return str(size) + "s"
-    field = VariableLengthProtocolField(name, create_struct_text, max_size_in_bytes)
-    return field
-
-def create_single_byte_positive_integer_protocol_field(name):
-    field = ConstantLengthProtocolField(name, "B", 1)
-    return field
 
 class MessageProtocol:
     def get_type_code(self):
@@ -424,12 +462,30 @@ def create_protocol(type_code: int, fields = None):
         protocol = create_protocol_with_fields(type_code, fields)
     return protocol
 
+def create_string_protocol_field(name, max_size_in_bytes):
+    """
+        Creates a protocol field for a string value as a function of the name and maximum size in bites
+        name: the name of the field
+        max_size_in_bytes: the maximum size of the field in bites
+    """
+    def create_struct_text(size):
+        return str(size) + "s"
+    field = VariableLengthProtocolField(name, create_struct_text, max_size_in_bytes)
+    return field
+
+def create_single_byte_nonnegative_integer_protocol_field(name):
+    """
+        Creates a protocol field for nonnegative integer values that fit in a single byte
+    """
+    field = ConstantLengthProtocolField(name, "B", 1)
+    return field
+
 def create_text_message_protocol(type_code: int):
     field = create_string_protocol_field("text", 2)
     protocol = create_protocol(type_code, field)
     return protocol
 
 def create_single_byte_positive_integer_message_protocol(type_code: int):
-    field = create_single_byte_positive_integer_protocol_field('number')
+    field = create_single_byte_nonnegative_integer_protocol_field('number')
     protocol = create_protocol(type_code, field)
     return protocol

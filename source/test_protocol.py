@@ -94,7 +94,7 @@ def decode_text(input_bytes):
 def create_complex_variable_length_message_protocol(type_code = 2):
     first_field = protocol.create_string_protocol_field('name', 2)
     second_field = protocol.create_string_protocol_field('password', 1)
-    third_field = protocol.create_single_byte_positive_integer_protocol_field('type')
+    third_field = protocol.create_single_byte_nonnegative_integer_protocol_field('type')
     result = protocol.VariableLengthMessageProtocol(type_code, [first_field, second_field, third_field])
     return result
 
@@ -134,8 +134,8 @@ class TestComplexVariableLengthMessageProtocol(unittest.TestCase):
 
 class TestMultipleFieldFixedLengthMessageProtocol(unittest.TestCase):
     def _compute_protocol(self):
-        first_field = protocol.create_single_byte_positive_integer_protocol_field('1')
-        second_field = protocol.create_single_byte_positive_integer_protocol_field('2')
+        first_field = protocol.create_single_byte_nonnegative_integer_protocol_field('1')
+        second_field = protocol.create_single_byte_nonnegative_integer_protocol_field('2')
         result = protocol.FixedLengthMessageProtocol(100, [first_field, second_field])
         return result
 
@@ -188,7 +188,7 @@ class TestMessageHandler(unittest.TestCase):
     def _create_more_complex_protocol_map(self):
         variable_length_protocol = create_complex_variable_length_message_protocol(0)
         bigger_fixed_length_field = protocol.ConstantLengthProtocolField('big', "2s", 2)
-        small_field = protocol.create_single_byte_positive_integer_protocol_field('small')
+        small_field = protocol.create_single_byte_nonnegative_integer_protocol_field('small')
         fixed_length_protocol = protocol.FixedLengthMessageProtocol(1, [bigger_fixed_length_field, small_field])
         protocol_map = protocol.ProtocolMap([variable_length_protocol, fixed_length_protocol])
         return protocol_map
