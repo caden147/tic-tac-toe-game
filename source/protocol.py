@@ -380,12 +380,44 @@ class ProtocolCallbackHandler:
     def has_protocol(self, protocol_type_code):
         return protocol_type_code in self.callbacks
 
+def is_any_field_variable_length(fields):
+    for field in fields:
+        if not field.is_fixed_length():
+            return True
+    return False
+
+def create_protocol_with_fields(type_code: int, fields = None):
+    if isinstance(fields, ProtocolField):
+        fields = [fields]
+    if is_any_field_variable_length(fields):
+        protocol = VariableLengthMessageProtocol(type_code, fields)
+    else:
+        protocol = FixedLengthMessageProtocol(type_code, fields)
+    return protocol
+
+def create_protocol(type_code: int, fields = None):
+    """
+        Creates a MessageProtocol object using a type code and optional fields. 
+        type_code: an integer number used to distinguish between different message protocols. 
+        Every MessageProtocol objects should have a unique type code.
+        The type code is sent with every message conforming to the protocol.
+        fields: an optional list of fields or a single field. 
+        Every field object defines the type of value that should go in the field
+        as well as the number of bytes the field can have. 
+    """
+    protocol = None
+    if not fields:
+        protocol = create_fieldless_message_protocol(type_code)
+    else:
+        protocol = create_protocol_with_fields(type_code, fields)
+    return protocol
+
 def create_text_message_protocol(type_code: int):
     field = create_string_protocol_field("text", 2)
-    protocol = VariableLengthMessageProtocol(type_code, [field])
+    protocol = create_protocol(type_code, field)
     return protocol
 
 def create_single_byte_positive_integer_message_protocol(type_code: int):
     field = create_single_byte_positive_integer_protocol_field('number')
-    protocol = FixedLengthMessageProtocol(type_code, [field])
+    protocol = create_protocol(type_code, field)
     return protocol
