@@ -580,11 +580,17 @@ def create_single_byte_nonnegative_integer_protocol_field(name):
     return field
 
 def create_text_message_protocol(type_code: int):
+    """
+        Returns a message protocol with the specified type code for messages having a single variable length string field
+    """
     field = create_string_protocol_field("text", 2)
     protocol = create_protocol(type_code, field)
     return protocol
 
-def create_single_byte_positive_integer_message_protocol(type_code: int):
+def create_single_byte_nonnegative_integer_message_protocol(type_code: int):
+    """
+        Returns a message protocol with the specified type code for messages having a single nonnegative single byte integer field
+    """
     field = create_single_byte_nonnegative_integer_protocol_field('number')
     protocol = create_protocol(type_code, field)
     return protocol

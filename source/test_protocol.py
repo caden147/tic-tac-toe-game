@@ -47,7 +47,7 @@ class TestMessageProtocol(unittest.TestCase):
 
 class TestSingleFieldFixedLengthProtocol(unittest.TestCase):
     def _create_protocol(self):
-        return protocol.create_single_byte_positive_integer_message_protocol(12)
+        return protocol.create_single_byte_nonnegative_integer_message_protocol(12)
     
     def test_computes_correct_field_string(self):
         expected = ">B"
@@ -178,7 +178,7 @@ def create_values_dictionary(values, names):
 class TestMessageHandler(unittest.TestCase):
     def _create_protocol_map(self):
         message_protocol = protocol.create_text_message_protocol(0)
-        nonnegative_integer_protocol = protocol.create_single_byte_positive_integer_message_protocol(1)
+        nonnegative_integer_protocol = protocol.create_single_byte_nonnegative_integer_message_protocol(1)
         protocol_map = protocol.ProtocolMap([message_protocol, nonnegative_integer_protocol])
         return protocol_map
     
