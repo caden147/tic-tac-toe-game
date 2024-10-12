@@ -2,20 +2,33 @@ import struct
 
 TYPE_CODE_SIZE = 1
 def pack_type_code(type_code: int):
+    """
+        Packs a type code into the an appropriate bite format for transmitting it
+        type_code: the type code
+    """
     return struct.pack(">B", type_code)
 
 def unpack_type_code_from_message(message):
+    """
+        Takes a message in byte format and returns the type code for it
+        message: bytes containing a message created using a message protocol
+    """
     relevant_bytes = message[:TYPE_CODE_SIZE]
     type_code = struct.unpack(">B", relevant_bytes)[0]
     return type_code
 
 def compute_message_after_type_code(message):
+    """
+        Returns the part of a message after its type code.
+        message: bytes containing a message created using a message protocol
+    """
     return message[TYPE_CODE_SIZE:]
 
 def compute_format_representation_for_size(size: int):
     """
         Computes the appropriate format string representation for the size of a field
         size: the desired size in number of bytes
+        Currently only sizes 1, 2, 4 and 8 are supported.
     """
     if size == 1:
         return 'B'
@@ -26,18 +39,27 @@ def compute_format_representation_for_size(size: int):
     elif size == 8:
         return 'L'
     else:
-        raise ValueError("Tried to create byte format string text for invalid size")
+        raise ValueError("Tried to create byte format string text for invalid size! Must be 1, 2, 4, or 8!")
 
 def encode_value(value):
+    """
+        Encodes a value into an appropriate byte format for packing it
+        value: a value to be packed into bytes
+    """
     if type(value) == str:
         return value.encode("utf-8")
     return value
 
 def decode_value(value):
+    """
+        Decodes a value unpacked if it is still in byte format
+        value: an unpacked value that might still be in byte format and need to be decoded
+    """
     if type(value) == bytes:
         return value.decode("utf-8")
     return value
 
+#Unused, untested class
 class ByteStream:
     def __init__(self, input_bytes):
         self.bytes = bytearray(input_bytes)
@@ -57,7 +79,11 @@ class ByteStream:
 
 
 class ProtocolField:
+    """
+        Interface definition for a protocol field. 
+    """
     def get_name(self):
+        """Returns the name of the field"""
         pass
     
     def compute_struct_text(self):
@@ -65,99 +91,139 @@ class ProtocolField:
         pass
 
     def is_fixed_length(self):
+        """Returns true if the field is fixed length and false otherwise"""
         return True
 
 class ConstantLengthProtocolField(ProtocolField):
+    """
+        Defines a constant length protocol field.
+        name: The name of the field.
+        struct_text: the text used with struct to pack and unpack values for this field
+        size: the size of the field in bytes
+    """
+    
     def __init__(self, name: str, struct_text: str, size: int):
         self.name = name
         self.struct_text = struct_text
         self.size = size
 
     def get_name(self):
+        """Returns the name of the field"""
         return self.name
     
     def compute_struct_text(self):
+        """Returns the text used to pack or unpack values of this field with the struct module"""
         return self.struct_text
     
     def get_size(self):
+        """Returns the size of the field in bytes"""
         return self.size
     
 class VariableLengthProtocolField(ProtocolField):
+    """
+        Defines a variable length protocol field. 
+        name: the name of the field.
+        create_struct_text: a function that computes the appropriate text for packing and unpacking values for the field
+        as a function of the field size in bytes.
+        max_size: the maximum size of the field in bytes
+    """
     def __init__(self, name: str, create_struct_text, max_size: int = 1):
         self.name = name
         self.create_struct_text = create_struct_text
         self.max_size = max_size
     
     def get_name(self):
+        """Returns the name of the field"""
         return self.name
     
     def compute_struct_text(self, size):
+        """Returns the text for packing and unpacking values of the field is a function of the size"""
         return self.create_struct_text(size)
     
     def compute_struct_text_from_value(self, value):
+        """Returns the text for packing and unpacking values of the field is a function of the value to pack or unpack"""
         return self.compute_struct_text(len(value))
 
     def get_max_size(self):
+        """Returns the maximum size of the field in bytes"""
         return self.max_size
     
     def is_fixed_length(self):
         return False
 
-def create_string_protocol_field(name, max_size_in_bytes):
-    def create_struct_text(size):
-        return str(size) + "s"
-    field = VariableLengthProtocolField(name, create_struct_text, max_size_in_bytes)
-    return field
-
-def create_single_byte_positive_integer_protocol_field(name):
-    field = ConstantLengthProtocolField(name, "B", 1)
-    return field
-
 class MessageProtocol:
+    """
+        Interface class for the MessageProtocol objects.
+        A message protocol object defines how to convert between values associated with a message for the protocol
+        and messages conforming to the protocol
+    """
     def get_type_code(self):
+        """Returns a type code integer defining which protocol it is"""
         pass
 
     def pack(self, *args):
+        """Packs values into a message conforming to the protocol"""
         pass
 
     def is_fixed_length(self):
+        """Returns true if the protocol is for fixed length messages and false otherwise"""
         return True
     
     def get_number_of_fields(self):
+        """Returns the number of fields supported by the protocol"""
         pass
 
 class TypeCodeOnlyMessageProtocol(MessageProtocol):
+    """
+        Defines a message protocol that only consists of a type code and no fields
+        type_code: the type code for the protocol
+    """
     def __init__(self, type_code):
         self.type_code = type_code
     
     def get_type_code(self):
+        """Returns a type code integer defining which protocol it is"""
         return self.type_code
 
     def get_number_of_fields(self):
+        """Returns the number of fields associated with the message protocol, in this case 0"""
         return 0
 
     def pack(self, *args):
+        """Returns a message for the protocol containing only the type code"""
         return pack_type_code(self.type_code)
 
 class FixedLengthMessageProtocol(MessageProtocol):
+    """
+        Defines a fixed length message protocol
+        type_code: the type code for the protocol
+        fields: the fields corresponding to the protocol
+    """
     def __init__(self, type_code, fields):
         self.type_code = type_code
         self.fields = fields
         self.size = self._compute_size()
 
     def compute_fields_string(self):
+        """Returns a string for packing and unpacking messages conforming to the protocol"""
         text = ">"
         for field in self.fields:
             text += field.compute_struct_text()
         return text
 
     def pack(self, *args):
+        """Pacs values into a message conforming to the protocol"""
         args = [encode_value(value) for value in args]
         type_code_bytes = pack_type_code(self.type_code)
         values_bytes = struct.pack(self.compute_fields_string(), *args)
         return type_code_bytes + values_bytes
 
     def unpack(self, input_bytes):
+        """
+            Unpacks bytes corresponding to the protocol excluding the type code at the beginning into the contained values
+            input_bytes: bytes for a message corresponding to the protocol excluding the type code
+            returns: a dictionary mapping field names to the corresponding values
+        """
         results = {}
         values = struct.unpack(self.compute_fields_string(), input_bytes)
         for i in range(len(values)):
@@ -166,6 +232,7 @@ class FixedLengthMessageProtocol(MessageProtocol):
         return results
 
     def get_type_code(self):
+        """Returns the type code associated with the protocol"""
         return self.type_code
     
     def _compute_size(self):
@@ -176,26 +243,37 @@ class FixedLengthMessageProtocol(MessageProtocol):
         return size
     
     def get_size(self):
+        """Returns the size in bytes of a message using the protocol"""
         return self.size
 
     def get_number_of_fields(self):
+        """Returns the number of fields corresponding to the protocol"""
         return len(self.fields)
 
 def create_fieldless_message_protocol(type_code):
+    """Creates a field less message protocol using the type code"""
     return TypeCodeOnlyMessageProtocol(type_code)
 
 class VariableLengthMessageProtocol(MessageProtocol):
+    """
+        Defines a variable length message protocol
+        type_code: the type code for the protocol
+        fields: the fields corresponding to the protocol
+    """
     def __init__(self, type_code, fields):
         self.type_code = type_code
         self.fields = fields
     
     def get_type_code(self):
+        """Returns the type code for the message protocol"""
         return self.type_code
 
     def is_fixed_length(self):
+        """Returns false to indicate that this is not a fixed length message protocol"""
         return False
     
     def pack(self, *args):
+        """Pacs values into a message conforming to the protocol"""
         args = [encode_value(value) for value in args]
         values_bytes = pack_type_code(self.type_code)
         for index, field in enumerate(self.fields):
@@ -210,40 +288,65 @@ class VariableLengthMessageProtocol(MessageProtocol):
         return values_bytes
     
     def is_field_fixed_length(self, i):
+        """Returns true if the field at index i is fixed length and false otherwise"""
         return self.fields[i].is_fixed_length()
 
     def is_last_field(self, i):
+        """Returns true if the field at index i is the last and false otherwise"""
         return i == len(self.fields) - 1
     
     def compute_fixed_length_field_length(self, i):
+        """Returns the field length for the field at index i assuming that it is fixed length"""
         field = self.fields[i]
         return field.get_size()
     
     def compute_variable_length_field_max_size(self, i):
+        """Returns the maximum field length for the field at index i assuming that it is variable length"""
         field = self.fields[i]
         return field.get_max_size()
         
     def unpack_field_length(self, i, input_bytes, starting_index):
+        """
+            Unpacks a field length into an integer value
+            i: the index of the corresponding field
+            input_bytes: part of a message in bytes corresponding to the protocol
+            starting_index: the start of the bytes in the message containing the field length
+        """
         maximum_size = self.compute_variable_length_field_max_size(i)
         relevant_bytes = input_bytes[starting_index: starting_index + maximum_size]
         return struct.unpack(">" + compute_format_representation_for_size(maximum_size), relevant_bytes)[0]
 
     def unpack_variable_length_field(self, i, length, input_bytes, starting_index):
+        """
+            Unpacks a variable length field value
+            i: the index for the field
+            length: the length of the field value
+            input_bytes: part of a message in bytes corresponding to the protocol
+            starting_index: the start of the bytes in the message containing the value
+        """
         field = self.fields[i]
         relevant_bytes = input_bytes[starting_index: starting_index + length]
         return decode_value(struct.unpack(">" + field.compute_struct_text(length), relevant_bytes)[0])
     
     def unpack_fixed_length_field(self, i, input_bytes, starting_index):
+        """
+            Unpacks bytes corresponding to a fixed length field
+            i: the index for the field
+            input_bytes: part of a message in bytes corresponding to the protocol
+            starting_index: the start of the bytes in the message containing the value
+        """
         field = self.fields[i]
         length = self.compute_fixed_length_field_length(i)
         relevant_bytes = input_bytes[starting_index: starting_index + length]
         return decode_value(struct.unpack(">" + field.compute_struct_text(), relevant_bytes)[0])
     
     def compute_field_name(self, i):
+        """Returns the name of the field at the specified index"""
         field = self.fields[i]
         return field.get_name()
     
     def get_number_of_fields(self):
+        """Returns the number of fields corresponding to the protocol"""
         return len(self.fields)
 
 class ProtocolMap:
@@ -263,16 +366,33 @@ class ProtocolMap:
         return code in self.map
 
     def pack_values_given_type_code(self, code: int, *values):
+        """
+            Packs values for a message protocol into bytes
+            code: the type code for the protocol
+            values: the values to pack
+        """
         message_protocol = self.get_protocol_with_type_code(code)
         result = message_protocol.pack(*values)
         return result
     
 class MessageHandler:
+    """
+        A message handler object is used to parse bytes being sent as part of a message utilizing a protocol map.
+        This handles when are not all sent at the same time.
+        protocol_map: a protocol map object containing message protocols that the handler should handle.
+        How to use:
+            Upon receiving a message, you must parse the type code using something other than the message handler
+            and then pass it to the handler using the update_protocol method with the protocol code.
+            Pass bytes after the type code to the message handler using the receive_bytes method.
+            Figure out if the handler is done parsing the message or needs more bites using the is_done_obtaining_values method.
+            Get the parse values as a dictionary using the get_values method.
+            Get the number of bytes that were extracted as part of the message using the get_number_of_bytes_extracted method.
+    """
     def __init__(self, protocol_map: ProtocolMap):
         self.protocol_map = protocol_map
-        self.initialize()
+        self._initialize()
     
-    def initialize(self, protocol = None):
+    def _initialize(self, protocol = None):
         self.bytes = None
         self.protocol: MessageProtocol = protocol
         self.values = {}
@@ -281,7 +401,7 @@ class MessageHandler:
         self.next_expected_size = None
         self.is_done = False
 
-    def update_bytes(self, input_bytes):
+    def _update_bytes(self, input_bytes):
         if self.bytes:
             self.bytes += input_bytes
         else:
@@ -341,19 +461,19 @@ class MessageHandler:
             self.bytes_index += self.protocol.compute_variable_length_field_max_size(self.field_index)
             self._update_values_based_on_variable_length_protocol()
 
-    def update_values(self):
+    def _update_values(self):
         if self.protocol.is_fixed_length():
             self._update_values_based_on_fixed_length_protocol()
         else:
             self._update_values_based_on_variable_length_protocol()
 
     def receive_bytes(self, input_bytes):
-        self.update_bytes(input_bytes)
-        self.update_values()
+        self._update_bytes(input_bytes)
+        self._update_values()
 
     def update_protocol(self, type_code):
         protocol = self.protocol_map.get_protocol_with_type_code(type_code)
-        self.initialize(protocol)
+        self._initialize(protocol)
 
     def is_done_obtaining_values(self):
         return self.is_done
@@ -365,27 +485,112 @@ class MessageHandler:
         return self.bytes_index
 
 class ProtocolCallbackHandler:
+    """Used to map between the callback functions to be called when a message corresponding to a protocol is received"""
     def __init__(self):
         self.callbacks = {}
     
     def register_callback_with_protocol(self, callback, protocol_type_code):
+        """
+            Registers a callback with a type code
+            callback: a callback function that receives values corresponding to a message in the protocol in a dictionary
+            mapping field names to values
+            protocol_type_code: the type code for the corresponding protocol
+        """
         self.callbacks[protocol_type_code] = callback
     
     def pass_values_to_protocol_callback_with_connection_information(self, values, protocol_type_code, connection_information):
+        """
+            Calls the specified callback with the corresponding values and connection information
+            values: a dictionary mapping field names to values
+            protocol_type_code: the type code for the corresponding protocol
+            connection_information: information used to identify the connection involved in the message
+        """
         return self.callbacks[protocol_type_code](values, connection_information)
 
     def pass_values_to_protocol_callback(self, values, protocol_type_code):
+        """
+            Calls the specified callback with the corresponding values
+            values: a dictionary mapping field names to values
+            protocol_type_code: the type code for the corresponding protocol
+        """
         return self.callbacks[protocol_type_code](values)
 
     def has_protocol(self, protocol_type_code):
+        """
+            Returns true if there is a callback in the handler corresponding to the protocol type code
+            and false otherwise
+            protocol_type_code: the type code for the corresponding protocol
+        """
         return protocol_type_code in self.callbacks
 
-def create_text_message_protocol(type_code: int):
-    field = create_string_protocol_field("text", 2)
-    protocol = VariableLengthMessageProtocol(type_code, [field])
+def is_any_field_variable_length(fields):
+    """Returns true if any of the fields passed to it are fixed length"""
+    for field in fields:
+        if not field.is_fixed_length():
+            return True
+    return False
+
+def create_protocol_with_fields(type_code: int, fields = None):
+    """
+        Returns a MessageProtocol object with the specified type code and fields
+        type_code: an integer number used to distinguish between different message protocols.
+        fields: a list of protocol fields
+    """
+    if isinstance(fields, ProtocolField):
+        fields = [fields]
+    if is_any_field_variable_length(fields):
+        protocol = VariableLengthMessageProtocol(type_code, fields)
+    else:
+        protocol = FixedLengthMessageProtocol(type_code, fields)
     return protocol
 
-def create_single_byte_positive_integer_message_protocol(type_code: int):
-    field = create_single_byte_positive_integer_protocol_field('number')
-    protocol = FixedLengthMessageProtocol(type_code, [field])
+def create_protocol(type_code: int, fields = None):
+    """
+        Creates a MessageProtocol object using a type code and optional fields. 
+        type_code: an integer number used to distinguish between different message protocols. 
+        Every MessageProtocol objects should have a unique type code.
+        The type code is sent with every message conforming to the protocol.
+        fields: an optional list of fields or a single field. 
+        Every field object defines the type of value that should go in the field
+        as well as the number of bytes the field can have. 
+    """
+    protocol = None
+    if not fields:
+        protocol = create_fieldless_message_protocol(type_code)
+    else:
+        protocol = create_protocol_with_fields(type_code, fields)
+    return protocol
+
+def create_string_protocol_field(name, max_size_in_bytes):
+    """
+        Creates a protocol field for a string value as a function of the name and maximum size in bites
+        name: the name of the field
+        max_size_in_bytes: the maximum size of the field in bites
+    """
+    def create_struct_text(size):
+        return str(size) + "s"
+    field = VariableLengthProtocolField(name, create_struct_text, max_size_in_bytes)
+    return field
+
+def create_single_byte_nonnegative_integer_protocol_field(name):
+    """
+        Creates a protocol field for nonnegative integer values that fit in a single byte
+    """
+    field = ConstantLengthProtocolField(name, "B", 1)
+    return field
+
+def create_text_message_protocol(type_code: int):
+    """
+        Returns a message protocol with the specified type code for messages having a single variable length string field
+    """
+    field = create_string_protocol_field("text", 2)
+    protocol = create_protocol(type_code, field)
+    return protocol
+
+def create_single_byte_nonnegative_integer_message_protocol(type_code: int):
+    """
+        Returns a message protocol with the specified type code for messages having a single nonnegative single byte integer field
+    """
+    field = create_single_byte_nonnegative_integer_protocol_field('number')
+    protocol = create_protocol(type_code, field)
     return protocol
