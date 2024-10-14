@@ -28,20 +28,25 @@ def create_table_if_nonexistent_using_cursor(table: Table, cursor):
         cursor: A cursor created using a database connection
     """
     creation_text = f"CREATE TABLE IF NOT EXISTS {table.name} ("
+    field_already_added = False
     for field in table.fields:
+        if field_already_added:
+            creation_text += ", "
         creation_text += f"{field.name} {field.data_type}"
         if field.is_primary_key:
-            creation_text += "PRIMARY KEY"
+            creation_text += " PRIMARY KEY"
+        field_already_added = True
+    creation_text += ")"
     cursor.execute(creation_text)
 
 def create_placeholders_for_fields(fields):
     placeholder = "("
     added_placeholder_before = False
     for _ in fields:
-        placeholder += "?"
         if added_placeholder_before:
             placeholder += ", "
-        placeholder = False
+        placeholder += "?"
+        added_placeholder_before = True
     placeholder += ")"
     return placeholder
 
@@ -67,7 +72,7 @@ def insert_values_into_table_for_database_at_path(values, table: Table, path: st
 
 def retrieve_values_from_table_from_database_at_path_using_primary_key(table: Table, path: str, primarykey):
     connection = sqlite3.connect(path)
-    retrieval_command = f"SELECT * FROM {table.name} WHERE {table.primary.key.name} = ?"
+    retrieval_command = f"SELECT * FROM {table.name} WHERE {table.primary_key.name} = ?"
     cursor = connection.cursor()
     queryresult = cursor.execute(retrieval_command, (primarykey,))
     values = queryresult.fetchone()
@@ -97,3 +102,11 @@ def create_database_at_path(path: str):
     connection.commit()
     connection.close()
 
+if __name__ == '__main__':
+    database_path = 'testing.db'
+    create_database_at_path(database_path)
+    insert_account_into_database_at_path(Account('name', 'password'), database_path)
+    result = retrieve_account_with_name_from_database_at_path('name', database_path)
+    print('result', result)
+    if result is not None:
+        print(result.name, result.password)
