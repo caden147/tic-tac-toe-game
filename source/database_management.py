@@ -10,6 +10,11 @@ class Table:
     def __init__(self, name: str, fields):
         self.name = name
         self.fields = fields
+        self.primary_key = None
+        for field in fields:
+            if field.is_primary_key:
+                self.primary_key = field
+                break
 
 class Account:
     def __init__(self, name, password):
@@ -60,7 +65,13 @@ def insert_values_into_table_for_database_at_path(values, table: Table, path: st
     if exception:
         raise exception
 
-
+def retrieve_values_from_table_from_database_at_path_using_primary_key(table: Table, path: str, primarykey):
+    connection = sqlite3.connect(path)
+    retrieval_command = f"SELECT * FROM {table.name} WHERE {table.primary.key.name} = ?"
+    cursor = connection.cursor()
+    queryresult = cursor.execute(retrieval_command, (primarykey,))
+    values = queryresult.fetchone()
+    return values
 
 ACCOUNT_TABLE = Table('account', [TableField('name', 'TEXT', is_primary_key=True), TableField('password', 'TEXT')])
 TABLES = [ACCOUNT_TABLE]
@@ -68,6 +79,11 @@ TABLES = [ACCOUNT_TABLE]
 def insert_account_into_database_at_path(account: Account, path: str):
     values = (account.name, account.password)
     insert_values_into_table_for_database_at_path(values, ACCOUNT_TABLE, path)
+
+def retrieve_account_with_name_from_database_at_path(name: str, path: str):
+    values = retrieve_values_from_table_from_database_at_path_using_primary_key(ACCOUNT_TABLE, path, name)
+    account = Account(*values)
+    return account
 
 def create_database_at_path(path: str):
     """
