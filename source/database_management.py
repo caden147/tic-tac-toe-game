@@ -1,4 +1,9 @@
+#This module provides functions for interfacing with the database and classes for encapsulating database entries
+#search for the comment starting with "The public interface" for functions intended to be used outside this module
+
 import sqlite3
+
+#Classes for representing database tables
 
 class TableField:
     def __init__(self, name: str, data_type: str, is_primary_key: bool = False):
@@ -16,10 +21,13 @@ class Table:
                 self.primary_key = field
                 break
 
+# Database entry representation classes
 class Account:
     def __init__(self, name, password):
         self.name = name
         self.password = password
+
+#Database management helper functions. Other modules should not call these
 
 def create_table_if_nonexistent_using_cursor(table: Table, cursor):
     """
@@ -78,8 +86,11 @@ def retrieve_values_from_table_from_database_at_path_using_primary_key(table: Ta
     values = queryresult.fetchone()
     return values
 
+#Database table representation definitions
 ACCOUNT_TABLE = Table('account', [TableField('name', 'TEXT', is_primary_key=True), TableField('password', 'TEXT')])
 TABLES = [ACCOUNT_TABLE]
+
+#The public interface: functions intended to be used by other modules
 
 def insert_account_into_database_at_path(account: Account, path: str):
     values = (account.name, account.password)
@@ -101,6 +112,8 @@ def create_database_at_path(path: str):
         create_table_if_nonexistent_using_cursor(table, cursor)
     connection.commit()
     connection.close()
+
+#Simple testing script that assumes that testing.db did not previously exist
 
 if __name__ == '__main__':
     database_path = 'testing.db'
