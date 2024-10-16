@@ -96,9 +96,6 @@ class Message:
     def read(self):
         self._read()
 
-        if self.request_type_code is None:
-            self.process_request_type_code()
-
         if self.request is None:
             self.process_request()
 
@@ -121,24 +118,16 @@ class Message:
             # Delete reference to socket object for garbage collection
             self.sock = None
 
-    def process_request_type_code(self):
-        if len(self._recv_buffer) >= protocol.TYPE_CODE_SIZE:
-            self.request_type_code = protocol.unpack_type_code_from_message(self._recv_buffer)
-            self._recv_buffer = protocol.compute_message_after_type_code(self._recv_buffer)
-            self.message_handler.update_protocol(self.request_type_code)
-
     def process_request(self):
         is_done = False
-        if protocol_definitions.SERVER_PROTOCOL_MAP.get_protocol_with_type_code(self.request_type_code).get_number_of_fields() == 0:
+        self.message_handler.receive_bytes(self._recv_buffer)
+        if self.message_handler.is_done_obtaining_values():
             is_done = True
-            self.request = {}
+            self.request = self.message_handler.get_values()
+            self.request_type_code = self.message_handler.get_protocol_type_code()
+            self.message_handler.prepare_for_next_message()
         else:
-            self.message_handler.receive_bytes(self._recv_buffer)
-            if self.message_handler.is_done_obtaining_values():
-                is_done = True
-                self.request = self.message_handler.get_values()
-            else:
-                self._recv_buffer = b""
+            self._recv_buffer = b""
         content_length = self.message_handler.get_number_of_bytes_extracted()
         if is_done:
             if len(self._recv_buffer) > 0:
