@@ -381,12 +381,12 @@ class MessageHandler:
         This handles when are not all sent at the same time.
         protocol_map: a protocol map object containing message protocols that the handler should handle.
         How to use:
-            Upon receiving a message, you must parse the type code using something other than the message handler
-            and then pass it to the handler using the update_protocol method with the protocol code.
-            Pass bytes after the type code to the message handler using the receive_bytes method.
-            Figure out if the handler is done parsing the message or needs more bites using the is_done_obtaining_values method.
-            Get the parse values as a dictionary using the get_values method.
+            Pass bytes to the message handler using the receive_bytes method.
+            Figure out if the handler is done parsing the message or needs more bytes using the is_done_obtaining_values method.
+            Get the parsed values as a dictionary using the get_values method.
+            Get the parsed type code using get_protocol_type_code.
             Get the number of bytes that were extracted as part of the message using the get_number_of_bytes_extracted method.
+            Tell it to prepare for the next message using the prepare_for_next_message method after you extract these values.
     """
     def __init__(self, protocol_map: ProtocolMap):
         self.protocol_map = protocol_map
@@ -406,6 +406,10 @@ class MessageHandler:
             self.bytes += input_bytes
         else:
             self.bytes = input_bytes
+
+    def _update_values_based_on_fieldless_protocol(self):
+        self.values = {}
+        self.is_done = True
 
     def _update_values_based_on_fixed_length_protocol(self):
         if len(self.bytes) >= self.protocol.get_size():
@@ -462,21 +466,39 @@ class MessageHandler:
             self._update_values_based_on_variable_length_protocol()
 
     def _update_values(self):
-        if self.protocol.is_fixed_length():
+        if self.protocol.get_number_of_fields() == 0:
+            self._update_values_based_on_fieldless_protocol()
+        elif self.protocol.is_fixed_length():
             self._update_values_based_on_fixed_length_protocol()
         else:
             self._update_values_based_on_variable_length_protocol()
 
     def receive_bytes(self, input_bytes):
-        self._update_bytes(input_bytes)
-        self._update_values()
+        if self.protocol:
+            self._update_bytes(input_bytes)
+            self._update_values()
+        elif len(input_bytes) >= TYPE_CODE_SIZE:
+            self._update_protocol(input_bytes)
+            remaining_bytes = compute_message_after_type_code(input_bytes)
+            self.receive_bytes(remaining_bytes)
 
-    def update_protocol(self, type_code):
+    def _update_protocol(self, input_bytes):
+        type_code = unpack_type_code_from_message(input_bytes)
         protocol = self.protocol_map.get_protocol_with_type_code(type_code)
         self._initialize(protocol)
 
     def is_done_obtaining_values(self):
         return self.is_done
+
+    def get_protocol(self):
+        return self.protocol
+    
+    def get_protocol_type_code(self):
+        return self.protocol.get_type_code()
+
+    def prepare_for_next_message(self):
+        self.protocol = None
+        self.is_done = False
 
     def get_values(self):
         return self.values
