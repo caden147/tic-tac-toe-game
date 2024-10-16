@@ -217,7 +217,7 @@ class TestMessageHandler(unittest.TestCase):
             packing = protocol_map.pack_values_given_type_code(i, *values[i])
             for j in range(len(packing)):
                 byte = packing[j:j+1]
-                self.assertFalse(message_handler.is_done_obtaining_values())
+                self.assertFalse(message_handler.is_done_obtaining_values(), f"Failed on iteration {i}")
                 message_handler.receive_bytes(byte)
             self.assertTrue(message_handler.is_done_obtaining_values())
             expected = create_values_dictionary(values[i], names[i])

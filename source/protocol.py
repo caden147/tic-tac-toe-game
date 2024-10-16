@@ -498,6 +498,7 @@ class MessageHandler:
 
     def prepare_for_next_message(self):
         self.protocol = None
+        self.is_done = False
 
     def get_values(self):
         return self.values
