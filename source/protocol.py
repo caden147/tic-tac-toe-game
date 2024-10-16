@@ -407,6 +407,10 @@ class MessageHandler:
         else:
             self.bytes = input_bytes
 
+    def _update_values_based_on_fieldless_protocol(self):
+        self.values = {}
+        self.is_done = True
+
     def _update_values_based_on_fixed_length_protocol(self):
         if len(self.bytes) >= self.protocol.get_size():
             self.values = self.protocol.unpack(self.bytes)
@@ -462,7 +466,9 @@ class MessageHandler:
             self._update_values_based_on_variable_length_protocol()
 
     def _update_values(self):
-        if self.protocol.is_fixed_length():
+        if self.protocol.get_number_of_fields() == 0:
+            self._update_values_based_on_fieldless_protocol()
+        elif self.protocol.is_fixed_length():
             self._update_values_based_on_fixed_length_protocol()
         else:
             self._update_values_based_on_variable_length_protocol()
@@ -487,6 +493,9 @@ class MessageHandler:
     def get_protocol(self):
         return self.protocol
     
+    def get_protocol_type_code(self):
+        return self.protocol.get_type_code()
+
     def prepare_for_next_message(self):
         self.protocol = None
 

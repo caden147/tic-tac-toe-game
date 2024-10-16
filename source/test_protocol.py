@@ -188,17 +188,18 @@ class TestMessageHandler(unittest.TestCase):
         bigger_fixed_length_field = protocol.ConstantLengthProtocolField('big', "2s", 2)
         small_field = protocol.create_single_byte_nonnegative_integer_protocol_field('small')
         fixed_length_protocol = protocol.FixedLengthMessageProtocol(1, [bigger_fixed_length_field, small_field])
-        protocol_map = protocol.ProtocolMap([variable_length_protocol, fixed_length_protocol])
+        fieldless_protocol = protocol.create_protocol(2)
+        protocol_map = protocol.ProtocolMap([variable_length_protocol, fixed_length_protocol, fieldless_protocol])
         return protocol_map
 
     def _create_more_complex_values_and_names(self):
-        return [["a"*1000, "b"*5, 9], ["sm", 126]], [['name', 'password', 'type'], ['big', 'small']]
+        return [["a"*1000, "b"*5, 9], ["sm", 126], []], [['name', 'password', 'type'], ['big', 'small'], []]
 
     def test_handles_full_values(self):
         protocol_map = self._create_protocol_map()
         values, names = self._create_values_and_names()
         message_handler = protocol.MessageHandler(protocol_map)
-        for i in range(1):
+        for i in range(len(values)):
             packing = protocol_map.pack_values_given_type_code(i, *values[i])
             message_handler.receive_bytes(packing)
             self.assertTrue(message_handler.is_done_obtaining_values())
@@ -212,7 +213,7 @@ class TestMessageHandler(unittest.TestCase):
 
     def _assert_handles_single_byte_at_a_time_given_map_values_and_names(self, protocol_map, values, names):
         message_handler = protocol.MessageHandler(protocol_map)
-        for i in range(1):
+        for i in range(len(values)):
             packing = protocol_map.pack_values_given_type_code(i, *values[i])
             for j in range(len(packing)):
                 byte = packing[j:j+1]
