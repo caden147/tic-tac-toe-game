@@ -123,8 +123,6 @@ class TestComplexVariableLengthMessageProtocol(unittest.TestCase):
         protocol_map = protocol.ProtocolMap([message_protocol])
         message_handler = protocol.MessageHandler(protocol_map)
         packing, expected = self._create_packed_example()
-        packing = packing[1:]
-        message_handler.update_protocol(2)
         message_handler.receive_bytes(packing)
         values = message_handler.get_values()
         self.assertEqual(len(expected), len(values))
@@ -202,22 +200,20 @@ class TestMessageHandler(unittest.TestCase):
         message_handler = protocol.MessageHandler(protocol_map)
         for i in range(1):
             packing = protocol_map.pack_values_given_type_code(i, *values[i])
-            type_code = protocol.unpack_type_code_from_message(packing)
-            packing = protocol.compute_message_after_type_code(packing)
-            message_handler.update_protocol(type_code)
             message_handler.receive_bytes(packing)
             self.assertTrue(message_handler.is_done_obtaining_values())
             expected = create_values_dictionary(values[i], names[i])
             actual = message_handler.get_values()
             self.assertEqual(expected, actual)
+            expected_type_code = i
+            actual_type_code = message_handler.get_protocol().get_type_code()
+            self.assertEqual(expected_type_code, actual_type_code)
+            message_handler.prepare_for_next_message()
 
     def _assert_handles_single_byte_at_a_time_given_map_values_and_names(self, protocol_map, values, names):
         message_handler = protocol.MessageHandler(protocol_map)
         for i in range(1):
             packing = protocol_map.pack_values_given_type_code(i, *values[i])
-            type_code = protocol.unpack_type_code_from_message(packing)
-            packing = protocol.compute_message_after_type_code(packing)
-            message_handler.update_protocol(type_code)
             for j in range(len(packing)):
                 byte = packing[j:j+1]
                 self.assertFalse(message_handler.is_done_obtaining_values())
@@ -226,6 +222,10 @@ class TestMessageHandler(unittest.TestCase):
             expected = create_values_dictionary(values[i], names[i])
             actual = message_handler.get_values()
             self.assertEqual(expected, actual)
+            expected_type_code = i
+            actual_type_code = message_handler.get_protocol().get_type_code()
+            self.assertEqual(expected_type_code, actual_type_code)
+            message_handler.prepare_for_next_message()
 
     def test_handles_single_byte_at_a_time(self):
         protocol_map = self._create_protocol_map()
