@@ -468,15 +468,27 @@ class MessageHandler:
             self._update_values_based_on_variable_length_protocol()
 
     def receive_bytes(self, input_bytes):
-        self._update_bytes(input_bytes)
-        self._update_values()
+        if self.protocol:
+            self._update_bytes(input_bytes)
+            self._update_values()
+        elif len(input_bytes) >= TYPE_CODE_SIZE:
+            self.update_protocol(input_bytes)
+            remaining_bytes = compute_message_after_type_code(input_bytes)
+            self.receive_bytes(remaining_bytes)
 
-    def update_protocol(self, type_code):
+    def update_protocol(self, input_bytes):
+        type_code = unpack_type_code_from_message(input_bytes)
         protocol = self.protocol_map.get_protocol_with_type_code(type_code)
         self._initialize(protocol)
 
     def is_done_obtaining_values(self):
         return self.is_done
+
+    def get_protocol(self):
+        return self.protocol
+    
+    def prepare_for_next_message(self):
+        self.protocol = None
 
     def get_values(self):
         return self.values
