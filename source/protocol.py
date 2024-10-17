@@ -136,10 +136,6 @@ class FixedLengthMessageProtocol(MessageProtocol):
         """Returns the number of fields corresponding to the protocol"""
         return len(self.fields)
 
-def create_fieldless_message_protocol(type_code):
-    """Creates a field less message protocol using the type code"""
-    return TypeCodeOnlyMessageProtocol(type_code)
-
 class VariableLengthMessageProtocol(MessageProtocol):
     """
         Defines a variable length message protocol
@@ -464,7 +460,7 @@ def create_protocol(type_code: int, fields = None):
     """
     protocol = None
     if not fields:
-        protocol = create_fieldless_message_protocol(type_code)
+        protocol = TypeCodeOnlyMessageProtocol(type_code)
     else:
         protocol = create_protocol_with_fields(type_code, fields)
     return protocol
