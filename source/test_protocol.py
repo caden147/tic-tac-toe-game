@@ -240,7 +240,7 @@ class TestMessageHandler(unittest.TestCase):
 
 class TestTypeCodeOnlyMessageProtocol(unittest.TestCase):
     def _create_protocol(self):
-        return protocol.create_fieldless_message_protocol(9)
+        return protocol.create_protocol(9)
 
     def test_returns_correct_type_code(self):
         expected = 9
