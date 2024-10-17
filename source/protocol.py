@@ -60,24 +60,6 @@ def decode_value(value):
         return value.decode("utf-8")
     return value
 
-#Unused, untested class
-class ByteStream:
-    def __init__(self, input_bytes):
-        self.bytes = bytearray(input_bytes)
-        self.index = 0
-    
-    def append(self, input_bytes):
-        self.bytes.extend(input_bytes)
-
-    def extract(self, amount: int):
-        ending = self.index + amount
-        result = self.bytes[self.index:ending]    
-        self.index = ending
-        return result
-
-    def size(self):
-        return len(self.bytes) - self.index
-
 class MessageProtocol:
     """
         Interface class for the MessageProtocol objects.
