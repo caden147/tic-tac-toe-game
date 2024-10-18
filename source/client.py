@@ -53,13 +53,18 @@ type_code, request = create_request(action, value)
 request_message = connection_handler.Message(type_code, request)
 connection = create_connection(host, port)
 connection.send_message(request_message)
-type_code, request = create_request("help", "value")
-request_message = connection_handler.Message(type_code, request)
+new_type_code, new_request = create_request("help", "value")
+new_request_message = connection_handler.Message(new_type_code, new_request)
+connection.send_message(new_request_message)
+new_type_code, new_request = create_request("help", "setup")
+new_request_message = connection_handler.Message(new_type_code, new_request)
+connection.send_message(new_request_message)
 connection.send_message(request_message)
+
 
 try:
     while True:
-        events = sel.select(timeout=1)
+        events = sel.select(timeout=None)
         for key, mask in events:
             message = key.data
             try:
