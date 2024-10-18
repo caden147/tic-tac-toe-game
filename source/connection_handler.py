@@ -1,24 +1,22 @@
 import selectors
-import os
 
 import protocol
 import protocol_definitions
-import logging_utilities
 
 class ConnectionInformation:
     def __init__(self, sock, addr):
         self.sock = sock
         self.addr = addr
 
-
-
 class MessageSender:
-    def __init__(self, connection_information: ConnectionInformation, protocol_map):
+    def __init__(self, logger, connection_information: ConnectionInformation, protocol_map, close_callback):
+        self.logger = logger
         self.sock = connection_information.sock
         self.addr = connection_information.addr
         self.buffer = b""
         self.request_queued = False
         self.protocol_map = protocol_map
+        self.close_callback = close_callback
     
     def write(self):
         if self.buffer:
@@ -32,7 +30,7 @@ class MessageSender:
             except OSError as exception:
                 print("Error: A Connection Failure Occurred!")
                 self.logger.log_message(f"{exception} trying to connect to {self.addr}")
-                self.close()
+                self.close_callback()
             else:
                 self.buffer = self.buffer[sent:]
 
@@ -40,6 +38,7 @@ class MessageSender:
         message = self.protocol_map.pack_values_given_type_code(type_code, *values)
         self.buffer += message
         self._request_queued = True
+        self.write()
 
 class Message:
     def __init__(self, type_code, values):
@@ -47,13 +46,15 @@ class Message:
         self.values = values
 
 class MessageReceiver:
-    def __init__(self, connection_information: ConnectionInformation, message_handler: protocol.MessageHandler):
+    def __init__(self, logger, connection_information: ConnectionInformation, message_handler: protocol.MessageHandler, close_callback):
+        self.logger = logger
         self.sock = connection_information.sock
         self.addr = connection_information.addr
         self.message_handler: protocol.MessageHandler = message_handler
         self.buffer = b""
         self.request = None
         self.requests = []
+        self.close_callback = close_callback
 
     def _read(self):
         try:
@@ -62,6 +63,10 @@ class MessageReceiver:
         except BlockingIOError:
             # Resource temporarily unavailable (errno EWOULDBLOCK)
             pass
+        except OSError as exception:
+            print('Error: A Connection Failure Occurred!')
+            self.logger.log_message(f"{exception} trying to connect to {self.addr}")
+            self.close_callback()
         else:
             if data:
                 self.buffer += data
@@ -107,10 +112,10 @@ class ConnectionHandler:
         else:
             sending_protocol_map = protocol_definitions.SERVER_PROTOCOL_MAP
             receiving_protocol_map = protocol_definitions.CLIENT_PROTOCOL_MAP
-        self.message_sender = MessageSender(self.connection_information, sending_protocol_map)
+        self.message_sender = MessageSender(self.connection_information, sending_protocol_map, self.close)
         self.callback_handler = callback_handler
         message_handler = protocol.MessageHandler(receiving_protocol_map)
-        self.message_receiver = MessageReceiver(connection_information, message_handler, callback_handler)
+        self.message_receiver = MessageReceiver(self.logger, connection_information, message_handler, self.close)
         self.logger = logger
 
     def _set_selector_events_mask(self, mode):
@@ -125,12 +130,16 @@ class ConnectionHandler:
             raise ValueError(f"Invalid events mask mode {repr(mode)}.")
         self.selector.modify(self.sock, events, data=self)
 
-    def respond_to_request(self):
-        request = self.message_receiver.extract_request()
+    def send_response_to_request(self, request: Message):
         message_values = self.callback_handler.pass_values_to_protocol_callback(self.request.values, request.type_code)
         if self.is_server:
             response = Message(request.type_code, *message_values)
             self.send_message(response)
+
+    def respond_to_request(self):
+        request = self.message_receiver.extract_request()
+        if self.callback_handler.has_protocol(request.type_code):
+            self.send_response_to_request(request)
         
     def read(self):
         self.message_receiver.read()
