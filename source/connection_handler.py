@@ -4,21 +4,28 @@ import protocol
 import protocol_definitions
 
 class ConnectionInformation:
+    """Class for keeping track of a socket and address"""
     def __init__(self, sock, addr):
         self.sock = sock
         self.addr = addr
 
 class MessageSender:
     def __init__(self, logger, connection_information: ConnectionInformation, protocol_map, close_callback):
+        """A message sender is responsible for transmitting a message as bytes to a connection peer
+            logger: a logger object for logging errors and significant occurrences
+            connection_information: the connection information to use for transmitting messages
+            protocol_map: a protocol map for converting messages to bytes
+            close_callback: the call back to call to close the current connection
+        """
         self.logger = logger
         self.sock = connection_information.sock
         self.addr = connection_information.addr
         self.buffer = b""
-        self.request_queued = False
         self.protocol_map = protocol_map
         self.close_callback = close_callback
     
     def write(self):
+        """Writes bytes in the buffer to the connection socket"""
         if self.buffer:
             self.logger.log_message(f"sending {repr(self.buffer)} to {self.addr}")
             try:
@@ -35,12 +42,13 @@ class MessageSender:
                 self.buffer = self.buffer[sent:]
 
     def send_message(self, type_code, values):
+        """Starts transmitting the message with specified type code and values to the connection peer"""
         message = self.protocol_map.pack_values_given_type_code(type_code, *values)
         self.buffer += message
-        self._request_queued = True
         self.write()
 
 class Message:
+    """Class for keeping track of type the code and message values for a message"""
     def __init__(self, type_code, values):
         self.type_code = type_code
         self.values = values
@@ -50,16 +58,23 @@ class Message:
 
 class MessageReceiver:
     def __init__(self, logger, connection_information: ConnectionInformation, message_handler: protocol.MessageHandler, close_callback):
+        """
+            Converts messages received over a connection into Message objects
+            logger: a logger object for logging errors and significant occurrences
+            connection_information: information on the connection used to receive bytes
+            message_handler: a message handler object for converting bytes to messages
+            close_callback: a callback function to use to close the current connection
+        """
         self.logger = logger
         self.sock = connection_information.sock
         self.addr = connection_information.addr
         self.message_handler: protocol.MessageHandler = message_handler
         self.buffer = b""
-        self.request = None
-        self.requests = []
+        self.messages = []
         self.close_callback = close_callback
 
     def _read(self):
+        """Puts data from the socket into the buffer"""
         try:
             # Should be ready to read
             data = self.sock.recv(4096)
@@ -77,36 +92,41 @@ class MessageReceiver:
                 raise RuntimeError("Peer closed.")
     
     def read(self):
+        """Processes newly received bytes"""
         self._read()
-        self.process_request()
+        self.process_message()
     
-    def process_complete_request(self):
+    def process_complete_message(self):
+        """Finishes handling a completed message"""
         values = self.message_handler.get_values()
         type_code = self.message_handler.get_protocol_type_code()
         content_length = self.message_handler.get_number_of_bytes_extracted()
         self.message_handler.prepare_for_next_message()
-        request = Message(type_code, values)
-        self.requests.append(request)
-        print("received request with type code", type_code, repr(request), "from", self.addr)
+        message = Message(type_code, values)
+        self.messages.append(message)
+        print("received message with type code", type_code, repr(message), "from", self.addr)
         if len(self.buffer) > 0:
             #If there is anything still in the buffer, process the new request
             #This is necessary because the selector will only call read when bytes are received, which will cause issues if multiple messages arrive simultaneously
             self.buffer = self.buffer[content_length:]
-            self.process_request()
+            self.process_message()
 
-    def process_request(self):
+    def process_message(self):
+        """Converts bytes into messages"""
         self.message_handler.receive_bytes(self.buffer)
         if self.message_handler.is_done_obtaining_values():
-            self.process_complete_request()
+            self.process_complete_message()
         else:
             self.buffer = b""
 
-    def has_processed_requests(self):
-        return len(self.requests) > 0
+    def has_processed_messages(self):
+        """Returns true if the bytes have been converted into at least one complete message"""
+        return len(self.messages) > 0
 
-    def extract_request(self) -> Message:
-        request = self.requests.pop(0)
-        return request
+    def extract_message(self) -> Message:
+        """Extracts the next complete message. Messages are extracted in the order in which they are received."""
+        message = self.messages.pop(0)
+        return message
 
 class ConnectionHandler:
     def __init__(self, selector, connection_information: ConnectionInformation, logger, callback_handler, *, is_server: bool=False):
@@ -144,7 +164,7 @@ class ConnectionHandler:
             self.send_message(response)
 
     def respond_to_request(self):
-        request = self.message_receiver.extract_request()
+        request = self.message_receiver.extract_message()
         if self.callback_handler.has_protocol(request.type_code):
             self.send_response_to_request(request)
         elif not self.is_server:
@@ -152,7 +172,7 @@ class ConnectionHandler:
         
     def read(self):
         self.message_receiver.read()
-        while self.message_receiver.has_processed_requests():
+        while self.message_receiver.has_processed_messages():
             self.respond_to_request()
 
     def send_message(self, request: Message):
