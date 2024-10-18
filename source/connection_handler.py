@@ -1,6 +1,7 @@
 import selectors
 
 import protocol
+from protocol import Message
 import protocol_definitions
 
 class ConnectionInformation:
@@ -46,15 +47,6 @@ class MessageSender:
         message = self.protocol_map.pack_values_given_type_code(type_code, *values)
         self.buffer += message
         self.write()
-
-class Message:
-    """Class for keeping track of type the code and message values for a message"""
-    def __init__(self, type_code, values):
-        self.type_code = type_code
-        self.values = values
-
-    def __str__(self):
-        return f"Type Code: {self.type_code}, Values: {self.values}"
 
 class MessageReceiver:
     def __init__(self, logger, connection_information: ConnectionInformation, message_handler: protocol.MessageHandler, close_callback):

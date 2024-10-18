@@ -3,6 +3,15 @@ from protocol_type_codes import *
 from packing_utilities import *
 from protocol_classes import *
 
+class Message:
+    """Class for keeping track of type the code and message values for a message"""
+    def __init__(self, type_code, values):
+        self.type_code = type_code
+        self.values = values
+
+    def __str__(self):
+        return f"Type Code: {self.type_code}, Values: {self.values}"
+
 class ProtocolMap:
     """Maps between type codes and protocols"""
     def __init__(self, protocols):
