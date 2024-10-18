@@ -7,9 +7,10 @@ import selectors
 import traceback
 import os
 
-import libclient
+import connection_handler
 import logging_utilities
 import protocol_definitions
+import protocol
 
 sel = selectors.DefaultSelector()
 os.makedirs("logs", exist_ok=True)
@@ -22,15 +23,21 @@ def create_request(action, value):
         else:
             return protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE, []
 
-def start_connection(host, port, type_code, request):
+def create_connection(host, port):
     addr = (host, port)
     print("starting connection to", addr)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(False)
     sock.connect_ex(addr)
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    message = libclient.Message(sel, sock, addr, type_code, request)
-    sel.register(sock, events, data=message)
+    connection = connection_handler.ConnectionHandler(
+        sel,
+        connection_handler.ConnectionInformation(sock, addr),
+        logger,
+        protocol.ProtocolCallbackHandler(),
+    )
+    sel.register(sock, events, data=connection)
+    return connection
 
 
 if len(sys.argv) not in [4, 5]:
@@ -43,7 +50,8 @@ value = ""
 if len(sys.argv) == 5:
     value = sys.argv[4]
 type_code, request = create_request(action, value)
-start_connection(host, port, type_code, request)
+connection = create_connection(host, port, type_code, request)
+connection.send_message(type_code, request)
 
 try:
     while True:
