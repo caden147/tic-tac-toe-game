@@ -180,7 +180,7 @@ class ConnectionHandler:
             response = Message(request.type_code, message_values)
             self.send_message(response)
 
-    def respond_to_request(self):
+    def respond_to_received_message(self):
         """This responds to a request by extracting the message from the message receiver and transmits any responses if needed"""
         request = self.message_receiver.extract_message()
         if self.callback_handler.has_protocol(request.type_code):
@@ -192,7 +192,7 @@ class ConnectionHandler:
         """Responds to the selector notifying the handler that bytes have been received from the peer"""
         self.message_receiver.read()
         while self.message_receiver.has_processed_messages():
-            self.respond_to_request()
+            self.respond_to_received_message()
 
     def send_message(self, request: Message):
         """Sends a message to the peer"""
