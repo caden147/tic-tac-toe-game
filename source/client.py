@@ -50,14 +50,14 @@ value = ""
 if len(sys.argv) == 5:
     value = sys.argv[4]
 type_code, request = create_request(action, value)
-request_message = connection_handler.Message(type_code, request)
+request_message = protocol.Message(type_code, request)
 connection = create_connection(host, port)
 connection.send_message(request_message)
 new_type_code, new_request = create_request("help", "value")
-new_request_message = connection_handler.Message(new_type_code, new_request)
+new_request_message = protocol.Message(new_type_code, new_request)
 connection.send_message(new_request_message)
 new_type_code, new_request = create_request("help", "setup")
-new_request_message = connection_handler.Message(new_type_code, new_request)
+new_request_message = protocol.Message(new_type_code, new_request)
 connection.send_message(new_request_message)
 connection.send_message(request_message)
 
