@@ -49,6 +49,8 @@ action = sys.argv[3]
 value = ""
 if len(sys.argv) == 5:
     value = sys.argv[4]
+
+# send messages to test connection persistence
 type_code, request = create_request(action, value)
 request_message = protocol.Message(type_code, request)
 connection = create_connection(host, port)
