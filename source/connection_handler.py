@@ -137,7 +137,7 @@ class ConnectionHandler:
     def send_response_to_request(self, request: Message):
         message_values = self.callback_handler.pass_values_to_protocol_callback(request.values, request.type_code)
         if self.is_server:
-            response = Message(request.type_code, *message_values)
+            response = Message(request.type_code, message_values)
             self.send_message(response)
 
     def respond_to_request(self):
