@@ -36,6 +36,7 @@ class MessageSender:
 
     def send_message(self, type_code, values):
         message = self.protocol_map.pack_values_given_type_code(type_code, *values)
+        self.buffer += message
         self._request_queued = True
         self.write()
 
@@ -95,7 +96,7 @@ class MessageReceiver:
         if is_done:
             if len(self.buffer) > 0:
                 self.buffer = self.buffer[content_length:]
-            print("received request with type code", type_code, repr(self.request), "from", self.addr)
+            print("received request with type code", type_code, repr(request), "from", self.addr)
 
     def has_processed_requests(self):
         return len(self.requests) > 0
@@ -134,7 +135,7 @@ class ConnectionHandler:
         self.selector.modify(self.connection_information.sock, events, data=self)
 
     def send_response_to_request(self, request: Message):
-        message_values = self.callback_handler.pass_values_to_protocol_callback(self.request.values, request.type_code)
+        message_values = self.callback_handler.pass_values_to_protocol_callback(request.values, request.type_code)
         if self.is_server:
             response = Message(request.type_code, *message_values)
             self.send_message(response)
