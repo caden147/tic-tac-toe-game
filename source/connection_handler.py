@@ -87,9 +87,12 @@ class MessageReceiver:
         self.message_handler.prepare_for_next_message()
         request = Message(type_code, values)
         self.requests.append(request)
-        if len(self.buffer) > 0:
-            self.buffer = self.buffer[content_length:]
         print("received request with type code", type_code, repr(request), "from", self.addr)
+        if len(self.buffer) > 0:
+            #If there is anything still in the buffer, process the new request
+            #This is necessary because the selector will only call read when bytes are received, which will cause issues if multiple messages arrive simultaneously
+            self.buffer = self.buffer[content_length:]
+            self.process_request()
 
     def process_request(self):
         self.message_handler.receive_bytes(self.buffer)
