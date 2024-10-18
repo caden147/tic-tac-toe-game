@@ -50,7 +50,7 @@ value = ""
 if len(sys.argv) == 5:
     value = sys.argv[4]
 type_code, request = create_request(action, value)
-connection = create_connection(host, port, type_code, request)
+connection = create_connection(host, port)
 connection.send_message(type_code, request)
 
 try:

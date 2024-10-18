@@ -112,11 +112,11 @@ class ConnectionHandler:
         else:
             sending_protocol_map = protocol_definitions.SERVER_PROTOCOL_MAP
             receiving_protocol_map = protocol_definitions.CLIENT_PROTOCOL_MAP
-        self.message_sender = MessageSender(self.connection_information, sending_protocol_map, self.close)
+        self.logger = logger
+        self.message_sender = MessageSender(self.logger, self.connection_information, sending_protocol_map, self.close)
         self.callback_handler = callback_handler
         message_handler = protocol.MessageHandler(receiving_protocol_map)
         self.message_receiver = MessageReceiver(self.logger, connection_information, message_handler, self.close)
-        self.logger = logger
 
     def _set_selector_events_mask(self, mode):
         """Set selector to listen for events: mode is 'r', 'w', or 'rw'."""
@@ -156,15 +156,15 @@ class ConnectionHandler:
             self.message_sender.write()
     
     def close(self):
-        self.logger.log_message(f"closing connection to {self.addr}")
+        self.logger.log_message(f"closing connection to {self.connection_information.addr}")
         try:
             self.selector.unregister(self.sock)
         except Exception as e:
-            self.logger.log_message(f"error: selector.unregister() exception for {self.addr}: {repr(e)}")
+            self.logger.log_message(f"error: selector.unregister() exception for {self.connection_information.addr}: {repr(e)}")
         try:
             self.sock.close()
         except OSError as e:
-            self.logger.log_message(f"error: socket.close() exception for {self.addr}: {repr(e)}")
+            self.logger.log_message(f"error: socket.close() exception for {self.connection_information.addr}: {repr(e)}")
         finally:
             # Delete reference to socket object for garbage collection
             self.sock = None
