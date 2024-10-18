@@ -41,7 +41,7 @@ class MessageSender:
         self.buffer += message
         self._request_queued = True
 
-class Request:
+class Message:
     def __init__(self, type_code, values):
         self.type_code = type_code
         self.values = values
@@ -79,6 +79,8 @@ class MessageReceiver:
             values = self.message_handler.get_values()
             type_code = self.message_handler.get_protocol_type_code()
             self.message_handler.prepare_for_next_message()
+            request = Message(type_code, values)
+            self.requests.append(request)
         else:
             self.buffer = b""
         content_length = self.message_handler.get_number_of_bytes_extracted()
@@ -86,13 +88,11 @@ class MessageReceiver:
             if len(self.buffer) > 0:
                 self.buffer = self.buffer[content_length:]
             print("received request with type code", self.request_type_code, repr(self.request), "from", self.addr)
-            request = Request(type_code, values)
-            self.requests.append(request)
 
     def has_processed_requests(self):
         return len(self.requests) > 0
 
-    def extract_request(self):
+    def extract_request(self) -> Message:
         request = self.requests.pop(0)
         return request
 
@@ -113,4 +113,51 @@ class ConnectionHandler:
         self.message_receiver = MessageReceiver(connection_information, message_handler, callback_handler)
         self.logger = logger
 
+    def _set_selector_events_mask(self, mode):
+        """Set selector to listen for events: mode is 'r', 'w', or 'rw'."""
+        if mode == "r":
+            events = selectors.EVENT_READ
+        elif mode == "w":
+            events = selectors.EVENT_WRITE
+        elif mode == "rw":
+            events = selectors.EVENT_READ | selectors.EVENT_WRITE
+        else:
+            raise ValueError(f"Invalid events mask mode {repr(mode)}.")
+        self.selector.modify(self.sock, events, data=self)
 
+    def respond_to_request(self):
+        request = self.message_receiver.extract_request()
+        message_values = self.callback_handler.pass_values_to_protocol_callback(self.request.values, request.type_code)
+        if self.is_server:
+            response = Message(request.type_code, *message_values)
+            self.send_message(response)
+        
+    def read(self):
+        self.message_receiver.read()
+        while self.message_receiver.has_processed_requests():
+            self.respond_to_request()
+
+    def send_message(self, request: Message):
+        self.message_sender.send_message(request.type_code, request.values)
+
+    def process_events(self, mask):
+        if mask & selectors.EVENT_READ:
+            self.read()
+        if mask & selectors.EVENT_WRITE:
+            self.message_sender.write()
+    
+    def close(self):
+        self.logger.log_message(f"closing connection to {self.addr}")
+        try:
+            self.selector.unregister(self.sock)
+        except Exception as e:
+            self.logger.log_message(f"error: selector.unregister() exception for {self.addr}: {repr(e)}")
+        try:
+            self.sock.close()
+        except OSError as e:
+            self.logger.log_message(f"error: socket.close() exception for {self.addr}: {repr(e)}")
+        finally:
+            # Delete reference to socket object for garbage collection
+            self.sock = None
+        
+    
