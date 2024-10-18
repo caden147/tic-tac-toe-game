@@ -36,7 +36,6 @@ class MessageSender:
 
     def send_message(self, type_code, values):
         message = self.protocol_map.pack_values_given_type_code(type_code, *values)
-        self.buffer += message
         self._request_queued = True
         self.write()
 
@@ -44,6 +43,9 @@ class Message:
     def __init__(self, type_code, values):
         self.type_code = type_code
         self.values = values
+
+    def __str__(self):
+        return "Type Code: {self.type_code}, Values: {self.values}"
 
 class MessageReceiver:
     def __init__(self, logger, connection_information: ConnectionInformation, message_handler: protocol.MessageHandler, close_callback):
@@ -75,6 +77,7 @@ class MessageReceiver:
     
     def read(self):
         self._read()
+        self.process_request()
         
     def process_request(self):
         is_done = False
@@ -92,7 +95,7 @@ class MessageReceiver:
         if is_done:
             if len(self.buffer) > 0:
                 self.buffer = self.buffer[content_length:]
-            print("received request with type code", self.request_type_code, repr(self.request), "from", self.addr)
+            print("received request with type code", type_code, repr(self.request), "from", self.addr)
 
     def has_processed_requests(self):
         return len(self.requests) > 0
@@ -128,7 +131,7 @@ class ConnectionHandler:
             events = selectors.EVENT_READ | selectors.EVENT_WRITE
         else:
             raise ValueError(f"Invalid events mask mode {repr(mode)}.")
-        self.selector.modify(self.sock, events, data=self)
+        self.selector.modify(self.connection_information.sock, events, data=self)
 
     def send_response_to_request(self, request: Message):
         message_values = self.callback_handler.pass_values_to_protocol_callback(self.request.values, request.type_code)
@@ -137,6 +140,7 @@ class ConnectionHandler:
             self.send_message(response)
 
     def respond_to_request(self):
+        print('responding to request')
         request = self.message_receiver.extract_request()
         if self.callback_handler.has_protocol(request.type_code):
             self.send_response_to_request(request)
@@ -144,7 +148,9 @@ class ConnectionHandler:
             print(f"Received message with type code {request.type_code}! values: {request.values}")
         
     def read(self):
+        print('reading')
         self.message_receiver.read()
+        print('finished reading')
         while self.message_receiver.has_processed_requests():
             self.respond_to_request()
 
@@ -160,15 +166,15 @@ class ConnectionHandler:
     def close(self):
         self.logger.log_message(f"closing connection to {self.connection_information.addr}")
         try:
-            self.selector.unregister(self.sock)
+            self.selector.unregister(self.connection_information.sock)
         except Exception as e:
             self.logger.log_message(f"error: selector.unregister() exception for {self.connection_information.addr}: {repr(e)}")
         try:
-            self.sock.close()
+            self.connection_information.sock.close()
         except OSError as e:
             self.logger.log_message(f"error: socket.close() exception for {self.connection_information.addr}: {repr(e)}")
         finally:
             # Delete reference to socket object for garbage collection
-            self.sock = None
+            self.connection_information.sock = None
         
     
