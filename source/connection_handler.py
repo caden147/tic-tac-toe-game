@@ -141,7 +141,6 @@ class ConnectionHandler:
             self.send_message(response)
 
     def respond_to_request(self):
-        print('responding to request')
         request = self.message_receiver.extract_request()
         if self.callback_handler.has_protocol(request.type_code):
             self.send_response_to_request(request)
@@ -149,9 +148,7 @@ class ConnectionHandler:
             print(f"Received message with type code {request.type_code}! values: {request.values}")
         
     def read(self):
-        print('reading')
         self.message_receiver.read()
-        print('finished reading')
         while self.message_receiver.has_processed_requests():
             self.respond_to_request()
 
