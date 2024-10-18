@@ -46,7 +46,7 @@ class Message:
         self.values = values
 
     def __str__(self):
-        return "Type Code: {self.type_code}, Values: {self.values}"
+        return f"Type Code: {self.type_code}, Values: {self.values}"
 
 class MessageReceiver:
     def __init__(self, logger, connection_information: ConnectionInformation, message_handler: protocol.MessageHandler, close_callback):
@@ -79,24 +79,24 @@ class MessageReceiver:
     def read(self):
         self._read()
         self.process_request()
-        
+    
+    def process_complete_request(self):
+        values = self.message_handler.get_values()
+        type_code = self.message_handler.get_protocol_type_code()
+        content_length = self.message_handler.get_number_of_bytes_extracted()
+        self.message_handler.prepare_for_next_message()
+        request = Message(type_code, values)
+        self.requests.append(request)
+        if len(self.buffer) > 0:
+            self.buffer = self.buffer[content_length:]
+        print("received request with type code", type_code, repr(request), "from", self.addr)
+
     def process_request(self):
-        is_done = False
         self.message_handler.receive_bytes(self.buffer)
         if self.message_handler.is_done_obtaining_values():
-            is_done = True
-            values = self.message_handler.get_values()
-            type_code = self.message_handler.get_protocol_type_code()
-            self.message_handler.prepare_for_next_message()
-            request = Message(type_code, values)
-            self.requests.append(request)
+            self.process_complete_request()
         else:
             self.buffer = b""
-        content_length = self.message_handler.get_number_of_bytes_extracted()
-        if is_done:
-            if len(self.buffer) > 0:
-                self.buffer = self.buffer[content_length:]
-            print("received request with type code", type_code, repr(request), "from", self.addr)
 
     def has_processed_requests(self):
         return len(self.requests) > 0
@@ -153,6 +153,7 @@ class ConnectionHandler:
             self.respond_to_request()
 
     def send_message(self, request: Message):
+        print(f"Sending message {request}")
         self.message_sender.send_message(request.type_code, request.values)
 
     def process_events(self, mask):

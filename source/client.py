@@ -53,6 +53,9 @@ type_code, request = create_request(action, value)
 request_message = connection_handler.Message(type_code, request)
 connection = create_connection(host, port)
 connection.send_message(request_message)
+type_code, request = create_request("help", "value")
+request_message = connection_handler.Message(type_code, request)
+connection.send_message(request_message)
 
 try:
     while True:

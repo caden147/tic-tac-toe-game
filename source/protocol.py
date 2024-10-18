@@ -504,7 +504,7 @@ class MessageHandler:
         return self.values
     
     def get_number_of_bytes_extracted(self):
-        return self.bytes_index
+        return self.bytes_index + TYPE_CODE_SIZE
 
 class ProtocolCallbackHandler:
     """Used to map between the callback functions to be called when a message corresponding to a protocol is received"""
