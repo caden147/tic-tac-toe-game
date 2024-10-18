@@ -42,10 +42,10 @@ class MessageSender:
             else:
                 self.buffer = self.buffer[sent:]
 
-    def send_message(self, type_code, values):
+    def send_message(self, message: Message):
         """Starts transmitting the message with specified type code and values to the connection peer"""
-        message = self.protocol_map.pack_values_given_type_code(type_code, *values)
-        self.buffer += message
+        message_bytes = self.protocol_map.pack_values_given_type_code(message.type_code, *message.values)
+        self.buffer += message_bytes
         self.write()
 
 class MessageReceiver:
@@ -86,7 +86,10 @@ class MessageReceiver:
     def read(self):
         """Processes newly received bytes"""
         self._read()
-        self.process_message()
+        #This loop is necessary because the selector will only call read when bytes are received, 
+        #so this is needed to handle messages that arrived in the same chunk of bytes
+        while len(self.buffer) > 0:
+            self.process_message()
     
     def process_complete_message(self):
         """Finishes handling a completed message"""
@@ -104,12 +107,9 @@ class MessageReceiver:
 
         print("received message with type code", type_code, repr(message), "from", self.addr)
 
-        #Start processing whatever is remaining in the buffer
+        #Remove the processed bites from the buffer
         if len(self.buffer) > 0:
-            #If there is anything still in the buffer, process the new request
-            #This is necessary because the selector will only call read when bytes are received, which will cause issues if multiple messages arrive simultaneously
             self.buffer = self.buffer[content_length:]
-            self.process_message()
 
     def process_message(self):
         """Converts bytes into messages"""
@@ -192,7 +192,7 @@ class ConnectionHandler:
     def send_message(self, request: Message):
         """Sends a message to the peer"""
         print(f"Sending message {request}")
-        self.message_sender.send_message(request.type_code, request.values)
+        self.message_sender.send_message(request)
 
     def process_events(self, mask):
         """Processes events from the selector managing the connection socket"""
