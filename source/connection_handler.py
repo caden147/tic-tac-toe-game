@@ -49,18 +49,18 @@ class MessageSender:
         self.write()
 
 class MessageReceiver:
-    def __init__(self, logger, connection_information: ConnectionInformation, message_handler: protocol.MessageHandler, close_callback):
+    def __init__(self, logger, connection_information: ConnectionInformation, receiving_protocol_map: protocol.ProtocolMap, close_callback):
         """
             Converts messages received over a connection into Message objects
             logger: a logger object for logging errors and significant occurrences
             connection_information: information on the connection used to receive bytes
-            message_handler: a message handler object for converting bytes to messages
+            message_handler: a protocol map for handling received messages
             close_callback: a callback function to use to close the current connection
         """
         self.logger = logger
         self.sock = connection_information.sock
         self.addr = connection_information.addr
-        self.message_handler: protocol.MessageHandler = message_handler
+        self.message_handler: protocol.MessageHandler = protocol.MessageHandler(receiving_protocol_map)
         self.buffer = b""
         self.messages = []
         self.close_callback = close_callback
@@ -128,6 +128,17 @@ class MessageReceiver:
         message = self.messages.pop(0)
         return message
 
+def compute_sending_and_receiving_protocol_maps(is_server):
+    """Properly chooses which protocol map is for receiving and which is for sending based on if this is for the server or client"""
+    if is_server:
+        sending_protocol_map = protocol_definitions.CLIENT_PROTOCOL_MAP
+        receiving_protocol_map = protocol_definitions.SERVER_PROTOCOL_MAP
+    else:
+        sending_protocol_map = protocol_definitions.SERVER_PROTOCOL_MAP
+        receiving_protocol_map = protocol_definitions.CLIENT_PROTOCOL_MAP
+    return sending_protocol_map, receiving_protocol_map
+    
+
 class ConnectionHandler:
     #* as an argument is not something you pass in. It just means that the following arguments must be named explicitly when giving them values
     def __init__(self, selector, connection_information: ConnectionInformation, logger, callback_handler, *, is_server: bool=False):
@@ -141,19 +152,13 @@ class ConnectionHandler:
         self.selector = selector
         self.connection_information = connection_information
         self.is_server = is_server
-
-        #Pick the correct protocol maps based on of this is the client or the server
-        if self.is_server:
-            sending_protocol_map = protocol_definitions.CLIENT_PROTOCOL_MAP
-            receiving_protocol_map = protocol_definitions.SERVER_PROTOCOL_MAP
-        else:
-            sending_protocol_map = protocol_definitions.SERVER_PROTOCOL_MAP
-            receiving_protocol_map = protocol_definitions.CLIENT_PROTOCOL_MAP
-
         self.logger = logger
         self.callback_handler = callback_handler
-        message_handler = protocol.MessageHandler(receiving_protocol_map)
-        self.message_receiver = MessageReceiver(self.logger, connection_information, message_handler, self.close)
+
+        #Pick the correct protocol maps based on if this is the client or the server
+        sending_protocol_map, receiving_protocol_map = compute_sending_and_receiving_protocol_maps(is_server)
+
+        self.message_receiver = MessageReceiver(self.logger, self.connection_information, receiving_protocol_map, self.close)
         self.message_sender = MessageSender(self.logger, self.connection_information, sending_protocol_map, self.close)
 
     def _set_selector_events_mask(self, mode):
