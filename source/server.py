@@ -15,7 +15,7 @@ def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read
     libserver.logger.log_message(f"accepted connection from {addr}")
     conn.setblocking(False)
-    message = libserver.Message(sel, conn, addr)
+    message = libserver.create_connection_handler(sel, conn, addr)
     sel.register(conn, selectors.EVENT_READ, data=message)
 
 
