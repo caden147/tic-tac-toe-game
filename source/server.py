@@ -45,7 +45,7 @@ try:
                     message.process_events(mask)
                 except Exception:
                     libserver.logger.log_message(
-                        f"main: error: exception for {message.addr}:\n{traceback.format_exc()}",
+                        f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
                     )
                     message.close()
 except KeyboardInterrupt:

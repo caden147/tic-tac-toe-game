@@ -140,6 +140,8 @@ class ConnectionHandler:
         request = self.message_receiver.extract_request()
         if self.callback_handler.has_protocol(request.type_code):
             self.send_response_to_request(request)
+        elif not self.is_server:
+            print(f"Received message with type code {request.type_code}! values: {request.values}")
         
     def read(self):
         self.message_receiver.read()

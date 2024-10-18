@@ -50,8 +50,9 @@ value = ""
 if len(sys.argv) == 5:
     value = sys.argv[4]
 type_code, request = create_request(action, value)
+request_message = connection_handler.Message(type_code, request)
 connection = create_connection(host, port)
-connection.send_message(type_code, request)
+connection.send_message(request_message)
 
 try:
     while True:
@@ -62,7 +63,7 @@ try:
                 message.process_events(mask)
             except Exception:
                 logger.log_message(
-                    f"main: error: exception for {message.addr}:\n{traceback.format_exc()}",
+                    f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
                 )
                 message.close()
         # Check for a socket being monitored to continue.
