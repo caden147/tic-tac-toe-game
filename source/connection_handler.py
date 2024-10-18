@@ -107,7 +107,7 @@ class MessageReceiver:
 
         print("received message with type code", type_code, repr(message), "from", self.addr)
 
-        #Remove the processed bites from the buffer
+        #Remove the processed bytes from the buffer
         if len(self.buffer) > 0:
             self.buffer = self.buffer[content_length:]
 
