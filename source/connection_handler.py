@@ -214,7 +214,8 @@ class ConnectionHandler:
         except Exception as e:
             self.logger.log_message(f"error: selector.unregister() exception for {self.connection_information.addr}: {repr(e)}")
         try:
-            self.connection_information.sock.close()
+            if self.connection_information.sock is not None: 
+                self.connection_information.sock.close()
         except OSError as e:
             self.logger.log_message(f"error: socket.close() exception for {self.connection_information.addr}: {repr(e)}")
         finally:
