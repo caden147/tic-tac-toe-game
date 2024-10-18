@@ -137,7 +137,15 @@ class MessageReceiver:
         return message
 
 class ConnectionHandler:
+    #* as an argument is not something you pass in. It just means that the following arguments must be named explicitly when giving them values
     def __init__(self, selector, connection_information: ConnectionInformation, logger, callback_handler, *, is_server: bool=False):
+        """
+            selector: the selector object that the connection handler is registered with
+            connection_information: the information used to exchange information with the peer
+            logger: a logger for logging noteworthy events and errors
+            callback_handler: the callback handler is used to respond to request messages
+            is_server: must be assigned values explicitly. Determines if this is for a client or server
+        """
         self.selector = selector
         self.connection_information = connection_information
         self.is_server = is_server
@@ -149,7 +157,7 @@ class ConnectionHandler:
         else:
             sending_protocol_map = protocol_definitions.SERVER_PROTOCOL_MAP
             receiving_protocol_map = protocol_definitions.CLIENT_PROTOCOL_MAP
-            
+
         self.logger = logger
         self.callback_handler = callback_handler
         message_handler = protocol.MessageHandler(receiving_protocol_map)
@@ -169,12 +177,14 @@ class ConnectionHandler:
         self.selector.modify(self.connection_information.sock, events, data=self)
 
     def send_response_to_request(self, request: Message):
+        """Sends the appropriate response to the request message"""
         message_values = self.callback_handler.pass_values_to_protocol_callback(request.values, request.type_code)
         if self.is_server:
             response = Message(request.type_code, message_values)
             self.send_message(response)
 
     def respond_to_request(self):
+        """This responds to a request by extracting the message from the message receiver and transmits any responses if needed"""
         request = self.message_receiver.extract_message()
         if self.callback_handler.has_protocol(request.type_code):
             self.send_response_to_request(request)
@@ -182,21 +192,25 @@ class ConnectionHandler:
             print(f"Received message with type code {request.type_code}! values: {request.values}")
         
     def read(self):
+        """Responds to the selector notifying the handler that bytes have been received from the peer"""
         self.message_receiver.read()
         while self.message_receiver.has_processed_messages():
             self.respond_to_request()
 
     def send_message(self, request: Message):
+        """Sends a message to the peer"""
         print(f"Sending message {request}")
         self.message_sender.send_message(request.type_code, request.values)
 
     def process_events(self, mask):
+        """Processes events from the selector managing the connection socket"""
         if mask & selectors.EVENT_READ:
             self.read()
         if mask & selectors.EVENT_WRITE:
             self.message_sender.write()
     
     def close(self):
+        """Cleans up the connection"""
         self.logger.log_message(f"closing connection to {self.connection_information.addr}")
         try:
             self.selector.unregister(self.connection_information.sock)
