@@ -6,6 +6,7 @@ import socket
 import selectors
 import traceback
 import os
+from threading import Thread
 
 import connection_handler
 import logging_utilities
@@ -15,13 +16,6 @@ import protocol
 sel = selectors.DefaultSelector()
 os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
-
-def create_request(action, value):
-    if action == "help":
-        if value:
-            return protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE, (value,)
-        else:
-            return protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE, []
 
 def create_connection(host, port):
     addr = (host, port)
@@ -39,29 +33,59 @@ def create_connection(host, port):
     sel.register(sock, events, data=connection)
     return connection
 
+def create_request(action, value):
+    """Creates a request for the server from an action value pair"""
+    type_code = None
+    values = None
+    request = None
+    if action == "help":
+        if value:
+            type_code = protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE
+            values = (value,)
+        else:
+            type_code = protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE
+            values = []
+    if type_code is not None:
+        request = protocol.Message(type_code, values)
+    return request
 
-if len(sys.argv) not in [4, 5]:
-    print("usage:", sys.argv[0], "<host> <port> <action> [<value>]")
+def create_request_from_text_input(text: str):
+    """Creates a request for the server from user input text"""
+    text = text.strip()
+    action_value_split = text.split(' ', maxsplit=1)
+    action = action_value_split[0]
+    value = ""
+    #If an argument is detected for the action, put it inside value
+    if len(action_value_split) > 1:
+        value = action_value_split[1]
+    request = create_request(action, value)
+    return request
+
+def perform_user_commands_through_connection(connection_handler: connection_handler.ConnectionHandler):
+    done = False
+    while not done:
+        user_input = input('')
+        if user_input == 'exit':
+            done = True
+        else:
+            request = create_request_from_text_input(user_input)
+            if request is None:
+                print('Command not recognized.')
+            else:
+                connection_handler.send_message(request)
+    connection_handler.close()
+
+if len(sys.argv) != 3:
+    print("usage:", sys.argv[0], "<host> <port>")
     sys.exit(1)
 
 host, port = sys.argv[1], int(sys.argv[2])
-action = sys.argv[3]
-value = ""
-if len(sys.argv) == 5:
-    value = sys.argv[4]
 
-# send messages to test connection persistence
-type_code, request = create_request(action, value)
-request_message = protocol.Message(type_code, request)
+
 connection = create_connection(host, port)
-connection.send_message(request_message)
-new_type_code, new_request = create_request("help", "value")
-new_request_message = protocol.Message(new_type_code, new_request)
-connection.send_message(new_request_message)
-new_type_code, new_request = create_request("help", "setup")
-new_request_message = protocol.Message(new_type_code, new_request)
-connection.send_message(new_request_message)
-connection.send_message(request_message)
+#Run the client input loop in a separate thread
+client_input_thread = Thread(target=perform_user_commands_through_connection, args=(connection,))
+client_input_thread.start()
 
 
 try:
