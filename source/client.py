@@ -34,9 +34,10 @@ def create_connection(host, port):
     return connection
 
 def _parse_two_space_separated_values(text):
+    """Parses text into 2 space separated values. Returns None on failure."""
     values = text.split(" ", maxsplit=1)
     if len(values) != 2:
-        return 
+        return None
     return values
 
 def create_request(action, value):
