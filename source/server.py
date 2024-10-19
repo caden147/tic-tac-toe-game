@@ -40,6 +40,7 @@ protocol_callback_handler.register_callback_with_protocol(create_help_message, p
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 
 def cleanup_connection(connection_information):
+    """Performs cleanup when a connection gets closed"""
     connection_table.remove_entry(connection_information)
 
 def create_connection_handler(selector, connection, address):
