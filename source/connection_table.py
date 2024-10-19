@@ -1,4 +1,4 @@
-from connection_handler import ConnectionHandler, ConnectionInformation, compute_unique_connection_information_representation
+from connection_handler import ConnectionHandler, ConnectionInformation
 from protocol import Message
 
 class ConnectionTableEntry:
@@ -8,8 +8,7 @@ class ConnectionTableEntry:
 
     def compute_table_representation(self):
         connection_information = self.connection_handler.get_connection_information()
-        representation = compute_unique_connection_information_representation(connection_information)
-        return representation
+        return connection_information.text_representation
 
     def send_message_through_connection(self, message: Message):
         self.connection_handler.send_message(message)
@@ -25,12 +24,10 @@ class ConnectionTable:
         representation = entry.compute_table_representation()
         self.connections[representation] = entry
 
-    def remove_entry(self, entry: ConnectionTableEntry):
-        representation = entry.compute_table_representation()
-        self.connections.pop(representation)
+    def remove_entry(self, connection_information: ConnectionInformation):
+        self.connections.pop(connection_information.text_representation)
 
     def get_entry(self, connection_information: ConnectionInformation):
-        representation = compute_unique_connection_information_representation(connection_information)
-        return self.connections.get(representation, None)
+        return self.connections.get(connection_information.text_representation, None)
 
     

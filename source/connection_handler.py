@@ -9,10 +9,8 @@ class ConnectionInformation:
     def __init__(self, sock, addr):
         self.sock = sock
         self.addr = addr
-
-def compute_unique_connection_information_representation(information: ConnectionInformation):
-    ip_address, port = information.addr
-    return f"{ip_address}:{port}"
+        ip_address, port = self.addr
+        self.text_representation = f"{ip_address}:{port}"
 
 class MessageSender:
     def __init__(self, logger, connection_information: ConnectionInformation, protocol_map, close_callback):
@@ -145,19 +143,21 @@ def compute_sending_and_receiving_protocol_maps(is_server):
 
 class ConnectionHandler:
     #* as an argument is not something you pass in. It just means that the following arguments must be named explicitly when giving them values
-    def __init__(self, selector, connection_information: ConnectionInformation, logger, callback_handler, *, is_server: bool=False):
+    def __init__(self, selector, connection_information: ConnectionInformation, logger, callback_handler, *, is_server: bool=False, on_close_callback=None):
         """
             selector: the selector object that the connection handler is registered with
             connection_information: the information used to exchange information with the peer
             logger: a logger for logging noteworthy events and errors
             callback_handler: the callback handler is used to respond to request messages
             is_server: must be assigned values explicitly. Determines if this is for a client or server
+            on_close_callback: must be assigned values explicitly. Called when the connection is closed using connection_information
         """
         self.selector = selector
         self.connection_information = connection_information
         self.is_server = is_server
         self.logger = logger
         self.callback_handler = callback_handler
+        self.on_close_callback = on_close_callback
 
         #Pick the correct protocol maps based on if this is the client or the server
         sending_protocol_map, receiving_protocol_map = compute_sending_and_receiving_protocol_maps(is_server)
@@ -225,6 +225,8 @@ class ConnectionHandler:
         finally:
             # Delete reference to socket object for garbage collection
             self.connection_information.sock = None
+            if self.on_close_callback is not None:
+                self.on_close_callback(self.connection_information)
         
     def get_connection_information(self):
         return self.connection_information

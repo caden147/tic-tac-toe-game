@@ -11,6 +11,7 @@ import protocol
 import protocol_definitions
 import logging_utilities
 import connection_handler
+from connection_table import ConnectionTable, ConnectionTableEntry
 
 os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
@@ -31,6 +32,9 @@ def create_help_message(values):
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 
+def cleanup_connection(connection_information):
+    connection_table.remove_entry(connection_information)
+
 def create_connection_handler(selector, connection, address):
     connection_information = connection_handler.ConnectionInformation(connection, address)
     handler = connection_handler.ConnectionHandler(
@@ -38,13 +42,19 @@ def create_connection_handler(selector, connection, address):
         connection_information,
         logger,
         protocol_callback_handler, 
-        is_server = True
+        is_server = True,
+        on_close_callback=cleanup_connection
     )
     return handler
 
+class AssociatedConnectionState:
+    """Data structure for holding variables associated with a connection"""
+    def __init__(self):
+        self.username = None
+        self.current_game = None
 
 sel = selectors.DefaultSelector()
-
+connection_table = ConnectionTable()
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read
@@ -52,6 +62,8 @@ def accept_wrapper(sock):
     conn.setblocking(False)
     connection_handler = create_connection_handler(sel, conn, addr)
     sel.register(conn, selectors.EVENT_READ, data=connection_handler)
+    connection_table_entry = ConnectionTableEntry(connection_handler, AssociatedConnectionState())
+    connection_table.insert_entry(connection_table_entry)
 
 
 if len(sys.argv) != 3:
