@@ -61,6 +61,9 @@ class AssociatedConnectionState:
         self.username = None
         self.current_game = None
 
+    def __str__(self) -> str:
+        return f"Username: {self.username}, playing game: {self.current_game}"
+
 sel = selectors.DefaultSelector()
 connection_table = ConnectionTable()
 
