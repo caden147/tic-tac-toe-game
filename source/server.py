@@ -46,14 +46,25 @@ def handle_account_creation(values, connection_information):
     try:
         username = values['username']
         password = values['password']
-        insert_account_into_database_at_path(username, password)
+        insert_account_into_database_at_path(Account(username, password), DATABASE_PATH)
         text = "Your account was successfully created with username: " + username
     except sqlite3.Error:
         text = f"The username {username} was already taken!"
     message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL, (text,))
     connection_table.send_message_to_entry(message, connection_information)
 
-
+def handle_signin(values, connection_information):
+    username = values['username']
+    password = values['password']
+    account: Account = retrieve_account_with_name_from_database_at_path(username, DATABASE_PATH)
+    if account is None or password != account.password:
+        text = f"No account with username matches your password!"
+    else:
+        text = f"You are signed in as {username}!"
+        state = connection_table.get_entry_state(connection_information)
+        state.username = username
+    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL, (text,))
+    connection_table.send_message_to_entry(message, connection_information)
 
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
