@@ -11,6 +11,8 @@ The game is not implemented yet, but the client and server can send messages. On
 
 ## Game Message Protocol Specification
 The game message protocol defines the structure and format of messages exchanged between the server and clients.
+* Message format: A struct-based format is used for message serialization and deserialization.
+* Message structure: type_code: a unique identifier for the message type. Field 1, Field 2, ...: Additional data fields specific to the message type. Variable length field: preceded by a field specifying its length.
 
 ## Technologies Used
 * Python
