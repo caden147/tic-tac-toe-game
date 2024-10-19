@@ -24,6 +24,12 @@ class ConnectionTableEntry:
         """Return state information associated with the connection"""
         return self.state
 
+    def __str__(self):
+        return f"{self.compute_table_representation()}->{self.get_state()}"
+
+    def __repr__(self):
+        return self.__str__()
+
 class ConnectionTable:
     def __init__(self):
         """A table for keeping track of connections"""
@@ -55,3 +61,6 @@ class ConnectionTable:
         entry = self.get_entry(connection_information)
         if entry is not None:
             entry.send_message_through_connection(message)
+
+    def __str__(self):
+        return str(self.connections)
