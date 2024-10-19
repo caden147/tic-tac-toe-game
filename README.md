@@ -9,6 +9,9 @@ The game is not implemented yet, but the client and server can send messages. On
 2. **Connect clients:** Run the `client.py` script on any desired number of different machines or terminals. This also requires command line arguments (host) (port) (action) and an optional (value). The current supported action is 'help', with the associated 'gameplay', 'setup', or '' (nothing/blank) values.
 3. **Play the game:** Players take turns entering their moves. The first player to get three in a row wins!
 
+## Game Message Protocol Specification
+The game message protocol defines the structure and format of messages exchanged between the server and clients.
+
 ## Technologies Used
 * Python
 * Sockets
@@ -21,4 +24,3 @@ Logs are utilized to document errors as well as client and server connect/discon
 * [Link to Sockets Documentation](https://docs.python.org/3/library/socket.html#example)
 * [Link to Socket Tutorial](https://docs.python.org/3/howto/sockets.html)
 * [Statement of Work](https://github.com/FireChickenProductivity/tic-tac-toe-game/blob/main/StatementOfWork.md)
-    
