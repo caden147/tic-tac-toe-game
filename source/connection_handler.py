@@ -11,7 +11,8 @@ class ConnectionInformation:
         self.addr = addr
 
 def compute_unique_connection_information_representation(information: ConnectionInformation):
-    return f"{information}:{information.port}"
+    ip_address, port = information.addr
+    return f"{ip_address}:{port}"
 
 class MessageSender:
     def __init__(self, logger, connection_information: ConnectionInformation, protocol_map, close_callback):
