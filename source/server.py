@@ -13,9 +13,15 @@ import protocol_definitions
 import logging_utilities
 import connection_handler
 from connection_table import ConnectionTable, ConnectionTableEntry
+from database_management import Account, create_database_at_path, retrieve_account_with_name_from_database_at_path, insert_account_into_database_at_path
+import sqlite3 #Imported for database exceptions only
 
 os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
+
+DATA_STORING_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+DATABASE_PATH = os.path.join(DATA_STORING_DIRECTORY, 'database.db')
+create_database_at_path(DATABASE_PATH)
 
 help_messages = {
     "": "The server will offer support for tictactoe games in the future. Help topics include\ngameplay\nsetup\n",
@@ -35,6 +41,19 @@ def create_help_message(values, connection_information):
     values = (text,)
     message = Message(type_code, values)
     connection_table.send_message_to_entry(message, connection_information)
+
+def handle_account_creation(values, connection_information):
+    try:
+        username = values['username']
+        password = values['password']
+        insert_account_into_database_at_path(username, password)
+        text = "Your account was successfully created with username: " + username
+    except sqlite3.Error:
+        text = f"The username {username} was already taken!"
+    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL, (text,))
+    connection_table.send_message_to_entry(message, connection_information)
+
+
 
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
