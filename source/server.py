@@ -12,6 +12,7 @@ from protocol import Message
 import protocol_definitions
 import logging_utilities
 import connection_handler
+from game_manager import GameManager
 from connection_table import ConnectionTable, ConnectionTableEntry
 from database_management import Account, create_database_at_path, retrieve_account_with_name_from_database_at_path, insert_account_into_database_at_path
 import sqlite3 #Imported for database exceptions only
