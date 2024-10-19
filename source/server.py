@@ -12,6 +12,7 @@ from protocol import Message
 import protocol_definitions
 import logging_utilities
 import connection_handler
+from game_manager import GameManager
 from connection_table import ConnectionTable, ConnectionTableEntry
 
 os.makedirs("logs", exist_ok=True)
