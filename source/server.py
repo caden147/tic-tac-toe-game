@@ -68,6 +68,8 @@ def handle_signin(values, connection_information):
 
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(handle_signin, protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(handle_account_creation, protocol_definitions.ACCOUNT_CREATION_PROTOCOL_TYPE_CODE)
 
 def cleanup_connection(connection_information):
     """Performs cleanup when a connection gets closed"""

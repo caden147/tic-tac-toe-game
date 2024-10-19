@@ -33,6 +33,12 @@ def create_connection(host, port):
     sel.register(sock, events, data=connection)
     return connection
 
+def _parse_two_space_separated_values(text):
+    values = text.split(" ", maxsplit=1)
+    if len(values) != 2:
+        return 
+    return values
+
 def create_request(action, value):
     """Creates a request for the server from an action value pair"""
     type_code = None
@@ -45,6 +51,15 @@ def create_request(action, value):
         else:
             type_code = protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE
             values = []
+    elif action == "login":
+        values = _parse_two_space_separated_values(value)
+        if values is not None:
+            type_code = protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE
+    elif action == "register":
+        values = _parse_two_space_separated_values(value)
+        if values is not None:
+            type_code = protocol_definitions.ACCOUNT_CREATION_PROTOCOL_TYPE_CODE
+
     if type_code is not None:
         request = protocol.Message(type_code, values)
     return request
