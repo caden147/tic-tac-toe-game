@@ -143,7 +143,7 @@ def compute_sending_and_receiving_protocol_maps(is_server):
 
 class ConnectionHandler:
     #* as an argument is not something you pass in. It just means that the following arguments must be named explicitly when giving them values
-    def __init__(self, selector, connection_information: ConnectionInformation, logger, callback_handler, *, is_server: bool=False, on_close_callback=None):
+    def __init__(self, selector, connection_information: ConnectionInformation, logger, callback_handler: protocol.ProtocolCallbackHandler, *, is_server: bool=False, on_close_callback=None):
         """
             selector: the selector object that the connection handler is registered with
             connection_information: the information used to exchange information with the peer
@@ -179,10 +179,10 @@ class ConnectionHandler:
 
     def send_response_to_request(self, request: Message):
         """Sends the appropriate response to the request message"""
-        message_values = self.callback_handler.pass_values_to_protocol_callback(request.values, request.type_code)
         if self.is_server:
-            response = Message(request.type_code, message_values)
-            self.send_message(response)
+            self.callback_handler.pass_values_to_protocol_callback_with_connection_information(request.values, request.type_code, self.connection_information)
+        else:
+            self.callback_handler.pass_values_to_protocol_callback(request.values, request.type_code)
 
     def respond_to_received_message(self):
         """This responds to a request by extracting the message from the message receiver and transmits any responses if needed"""

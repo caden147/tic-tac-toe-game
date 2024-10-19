@@ -25,9 +25,14 @@ class ConnectionTable:
         self.connections[representation] = entry
 
     def remove_entry(self, connection_information: ConnectionInformation):
-        self.connections.pop(connection_information.text_representation)
+        representation = connection_information.text_representation
+        if representation in self.connections:
+            self.connections.pop(connection_information.text_representation)
 
     def get_entry(self, connection_information: ConnectionInformation):
         return self.connections.get(connection_information.text_representation, None)
 
-    
+    def send_message_to_entry(self, message: Message, connection_information: ConnectionInformation):
+        entry = self.get_entry(connection_information)
+        if entry is not None:
+            entry.send_message_through_connection(message)

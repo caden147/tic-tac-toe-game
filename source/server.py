@@ -8,6 +8,7 @@ import traceback
 import os
 
 import protocol
+from protocol import Message
 import protocol_definitions
 import logging_utilities
 import connection_handler
@@ -23,12 +24,18 @@ help_messages = {
 }
 
 protocol_callback_handler = protocol.ProtocolCallbackHandler()
-def create_help_message(values):
+def create_help_message(values, connection_information):
     label: str = values.get("text", "")
     if label in help_messages:
-        return (help_messages[label],)
+        text = help_messages[label]
+        type_code = protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE
     else:
-        return (f"Did not recognize help topic {label}!\n{help_messages[""]}",)
+        text = f"Did not recognize help topic {label}!\n{help_messages[""]}"
+        type_code = protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE
+    values = (text,)
+    message = Message(type_code, values)
+    connection_table.send_message_to_entry(message, connection_information)
+
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 
