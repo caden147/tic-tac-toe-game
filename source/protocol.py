@@ -261,3 +261,12 @@ def create_single_byte_nonnegative_integer_message_protocol(type_code: int):
     field = create_single_byte_nonnegative_integer_protocol_field('number')
     protocol = create_protocol(type_code, field)
     return protocol
+
+def create_username_and_password_message_protocol(type_code: int):
+    """
+        Returns a message protocol for a username and password field
+    """
+    user_name_field = create_string_protocol_field("username", 1)
+    password_field = create_string_protocol_field("password", 1)
+    protocol = create_protocol(type_code, ((user_name_field, password_field)))
+    return protocol
