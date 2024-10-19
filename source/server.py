@@ -8,9 +8,11 @@ import traceback
 import os
 
 import protocol
+from protocol import Message
 import protocol_definitions
 import logging_utilities
 import connection_handler
+from connection_table import ConnectionTable, ConnectionTableEntry
 
 os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
@@ -22,14 +24,24 @@ help_messages = {
 }
 
 protocol_callback_handler = protocol.ProtocolCallbackHandler()
-def create_help_message(values):
+def create_help_message(values, connection_information):
     label: str = values.get("text", "")
     if label in help_messages:
-        return (help_messages[label],)
+        text = help_messages[label]
+        type_code = protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE
     else:
-        return (f"Did not recognize help topic {label}!\n{help_messages[""]}",)
+        text = f"Did not recognize help topic {label}!\n{help_messages[""]}"
+        type_code = protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE
+    values = (text,)
+    message = Message(type_code, values)
+    connection_table.send_message_to_entry(message, connection_information)
+
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
+
+def cleanup_connection(connection_information):
+    """Performs cleanup when a connection gets closed"""
+    connection_table.remove_entry(connection_information)
 
 def create_connection_handler(selector, connection, address):
     connection_information = connection_handler.ConnectionInformation(connection, address)
@@ -38,13 +50,22 @@ def create_connection_handler(selector, connection, address):
         connection_information,
         logger,
         protocol_callback_handler, 
-        is_server = True
+        is_server = True,
+        on_close_callback=cleanup_connection
     )
     return handler
 
+class AssociatedConnectionState:
+    """Data structure for holding variables associated with a connection"""
+    def __init__(self):
+        self.username = None
+        self.current_game = None
+
+    def __str__(self) -> str:
+        return f"Username: {self.username}, playing game: {self.current_game}"
 
 sel = selectors.DefaultSelector()
-
+connection_table = ConnectionTable()
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read
@@ -52,6 +73,8 @@ def accept_wrapper(sock):
     conn.setblocking(False)
     connection_handler = create_connection_handler(sel, conn, addr)
     sel.register(conn, selectors.EVENT_READ, data=connection_handler)
+    connection_table_entry = ConnectionTableEntry(connection_handler, AssociatedConnectionState())
+    connection_table.insert_entry(connection_table_entry)
 
 
 if len(sys.argv) != 3:
