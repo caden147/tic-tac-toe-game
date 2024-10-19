@@ -10,6 +10,9 @@ class ConnectionInformation:
         self.sock = sock
         self.addr = addr
 
+def compute_unique_connection_information_representation(information: ConnectionInformation):
+    return f"{information}:{information.port}"
+
 class MessageSender:
     def __init__(self, logger, connection_information: ConnectionInformation, protocol_map, close_callback):
         """A message sender is responsible for transmitting a message as bytes to a connection peer
@@ -222,4 +225,5 @@ class ConnectionHandler:
             # Delete reference to socket object for garbage collection
             self.connection_information.sock = None
         
-    
+    def get_connection_information(self):
+        return self.connection_information
