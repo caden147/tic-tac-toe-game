@@ -51,7 +51,7 @@ def handle_account_creation(values, connection_information):
         text = "Your account was successfully created with username: " + username
     except sqlite3.Error:
         text = f"The username {username} was already taken!"
-    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL, (text,))
+    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
     connection_table.send_message_to_entry(message, connection_information)
 
 def handle_signin(values, connection_information):
@@ -64,7 +64,7 @@ def handle_signin(values, connection_information):
         text = f"You are signed in as {username}!"
         state = connection_table.get_entry_state(connection_information)
         state.username = username
-    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL, (text,))
+    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
     connection_table.send_message_to_entry(message, connection_information)
 
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
