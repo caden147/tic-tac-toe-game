@@ -1,15 +1,10 @@
 class Game:
-    def __init__(self, creator_username):
+    def __init__(self, creator_username, invited_username):
         self.creator_username = creator_username
-        self.players = [creator_username]
+        self.invited_username = invited_username
+        self.players = [creator_username, invited_username]
         self.board = [' ' for _ in range(9)]
         self.current_turn = creator_username
-
-    def add_player(self, username):
-        if len(self.players) < 2:
-            self.players.append(username)
-            return True
-        return False
 
     def make_move(self, username, move):
         if username != self.current_turn:
@@ -34,15 +29,20 @@ class GameHandler:
     def __init__(self):
         self.games = {}
 
-    def create_game(self, creator_username):
-        game_id = len(self.games)
-        self.games[game_id] = Game(creator_username)
+    def create_game(self, creator_username, invited_username):
+        game_id = self.sorted_game_id(creator_username, invited_username)
+        if game_id in self.games:
+            return False
+        self.games[game_id] = Game(creator_username, invited_username)
         return game_id
 
-    def join_game(self, game_id, username):
-        if game_id in self.games:
-            return self.games[game_id].add_player(username)
-        return False
-
-    def get_game(self, game_id):
+    def get_game(self, creator_username, invited_username):
+        game_id = self.sorted_game_id(creator_username, invited_username)
         return self.games.get(game_id)
+
+    def game_exists(self, creator_username, invited_username):
+        game_id = self.sorted_game_id(creator_username, invited_username)
+        return game_id in self.games
+    
+    def sorted_game_id(self, creator_username, invited_username):
+        return ' '.join(sorted([creator_username, invited_username]))
