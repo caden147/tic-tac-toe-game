@@ -8,3 +8,4 @@ def convert_move_text_to_move_number(text: str):
         number += 3
     elif letter == 'c':
         number += 6
+    return number
