@@ -20,9 +20,9 @@ Abstract protocols (use to define concrete message protocols):
 
 Message Protocols for Communicating From the Client to the Server:
 * Help with no argument: type code 0. No other fields. Expected response: The base help response described below. 
-* Help with argument: type code 0. A text message protocol with a string containing a specific topic to receive help on. The expected response is the help response with argument described below.
-* Account creation request: type code 3. A username and password protocol for requesting the creation of an account. The expected response is a text message response describing if the account could be created or already existed. 
-* Login request: Type code 4. A username and password protocol for logging in. The expected response is a text message response describing if login was successful. 
+* Help with argument: type code 1. A text message protocol with a string containing a specific topic to receive help on. The expected response is the help response with argument described below.
+* Account creation request: type code 2. A username and password protocol for requesting the creation of an account. The expected response is a text message response describing if the account could be created or already existed. 
+* Login request: Type code 3. A username and password protocol for logging in. The expected response is a text message response describing if login was successful. 
 
 Message Protocols for Communicating From the Server to the Client:
 * Base help response: a text message protocol with type code 0. The string contains a help message giving some information on how to communicate with the server.
