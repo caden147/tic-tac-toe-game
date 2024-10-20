@@ -6,19 +6,28 @@ class Game:
         self.current_turn = creator_username
 
     def add_player(self, username):
-        # check for game capacity, add if capacity != 2
-        # tie up username properly
-        return None
-    
+        if len(self.players) < 2:
+            self.players.append(username)
+            return True
+        return False
+
     def make_move(self, username, move):
-        # if it's a user's turn, allow them to make a move.
-        # tie up username and move properly
-        return None
+        if username != self.current_turn:
+            return False
+        move_index = int(move) - 1
+        if self.board[move_index] != ' ':
+            return False
+        self.board[move_index] = 'X' if username == self.creator_username else 'O'
+        self.current_turn = self.players[0] if username == self.players[1] else self.players[1]
+        return True
 
     def check_winner(self):
-        # make list of winning combos
-        # if gameboard contains winning combo, identify the player, establish them as the winner.
-        # if combo doesn't exist and there are no more moves on the gameboard, tie and end game.
+        winning_combos = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
+        for combo in winning_combos:
+            if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != ' ':
+                return self.board[combo[0]]
+        if ' ' not in self.board:
+            return 'Tie'
         return None
 
 class GameHandler:
