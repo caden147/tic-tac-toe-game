@@ -14,9 +14,9 @@ The game message protocol defines the structure and format of messages exchanged
 * Message format: A struct-based format is used for message serialization and deserialization.
 * Message structure: type_code: a single byte unique identifier for the message type at the start of every message. Field 1, Field 2, ...: Additional data fields specific to the message type. Variable length fields are preceded by a field specifying its length.
 
-Abstract protocols (use to define concrete message protocols):
+Abstract protocols (used to define concrete message protocols):
 * Text message protocol: Contains a type code followed by a 2 byte field giving the length of the last field, which is a string.
-* Username and password message protocol: Contains a type code followed by a 1 byte field giving the length of the next field. The next field is a string containing the username. The following field contains a one byte length of the following field, which is a string field containing the password. 
+* Username and password message protocol: Contains a type code followed by a 1 byte field giving the length of the next field. The next field is a string containing the username. The following field contains a one byte giving the length of the following field, which is a string field containing the password. 
 * Single byte message protocol: Contains a type code follow by a single byte that gets decoded as an unsigned integer. 
 * Small text message protocol: Contains a type code, then a 1 byte field giving the length of the next field, and then a string field.
 * Game board message protocol: Contains a type code and then a fixed length 9 byte string representing a tictactoe game board. Each character represents a position on the board. 
