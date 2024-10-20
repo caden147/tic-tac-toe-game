@@ -12,10 +12,23 @@ import connection_handler
 import logging_utilities
 import protocol_definitions
 import protocol
+import game_actions
 
 sel = selectors.DefaultSelector()
 os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
+current_game = None
+protocol_callback_handler = protocol.ProtocolCallbackHandler()
+
+def update_game(values):
+    global current_game
+    current_game = values["text"]
+    print("The game board is now:")
+    print(current_game)
+def handle_text_message(values):
+    print("Server: " + values["text"])
+protocol_callback_handler.register_callback_with_protocol(handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
 def create_connection(host, port):
     addr = (host, port)
@@ -28,7 +41,7 @@ def create_connection(host, port):
         sel,
         connection_handler.ConnectionInformation(sock, addr),
         logger,
-        protocol.ProtocolCallbackHandler(),
+        protocol_callback_handler,
     )
     sel.register(sock, events, data=connection)
     return connection
@@ -60,6 +73,22 @@ def create_request(action, value):
         values = _parse_two_space_separated_values(value)
         if values is not None:
             type_code = protocol_definitions.ACCOUNT_CREATION_PROTOCOL_TYPE_CODE
+    elif action == "quit":
+        if current_game is not None:
+            type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
+    elif action == "join":
+        if value != "" and current_game is None:
+            type_code = protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE
+            values = (value,)
+    elif action == "create" and current_game is None:
+        if value != "":
+            type_code = protocol_definitions.GAME_CREATION_PROTOCOL_TYPE_CODE
+            values = (value,)
+    elif action == "move":
+        if current_game is not None and game_actions.is_valid_move_text(value):
+            type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
+            move_number = game_actions.convert_move_text_to_move_number(value)
+            values = (move_number,)
 
     if type_code is not None:
         request = protocol.Message(type_code, values)

@@ -177,8 +177,8 @@ class ConnectionHandler:
             raise ValueError(f"Invalid events mask mode {repr(mode)}.")
         self.selector.modify(self.connection_information.sock, events, data=self)
 
-    def send_response_to_request(self, request: Message):
-        """Sends the appropriate response to the request message"""
+    def respond_to_request(self, request: Message):
+        """Responds to the request message"""
         if self.is_server:
             self.callback_handler.pass_values_to_protocol_callback_with_connection_information(request.values, request.type_code, self.connection_information)
         else:
@@ -188,7 +188,7 @@ class ConnectionHandler:
         """This responds to a request by extracting the message from the message receiver and transmits any responses if needed"""
         request = self.message_receiver.extract_message()
         if self.callback_handler.has_protocol(request.type_code):
-            self.send_response_to_request(request)
+            self.respond_to_request(request)
         elif not self.is_server:
             print(f"Received message with type code {request.type_code}! values: {request.values}")
         
