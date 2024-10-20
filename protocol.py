@@ -270,3 +270,11 @@ def create_username_and_password_message_protocol(type_code: int):
     password_field = create_string_protocol_field("password", 1)
     protocol = create_protocol(type_code, ((user_name_field, password_field)))
     return protocol
+
+def create_username_message_protocol(type_code: int):
+    """
+        Returns a message protocol for communicating a username
+    """
+    user_name_field = creates_single_byte_length_field_string_protocol_field("username")
+    protocol = create_protocol(type_code, user_name_field)
+    return protocol

@@ -84,6 +84,12 @@ def create_string_protocol_field(name, max_size_in_bytes):
     field = VariableLengthProtocolField(name, create_struct_text, max_size_in_bytes)
     return field
 
+def creates_single_byte_length_field_string_protocol_field(name):
+    """
+        Creates a protocol field with specified name for a variable length string where the length is contained in a single byte field
+    """
+    return create_string_protocol_field(name, 1)
+    
 def create_single_byte_nonnegative_integer_protocol_field(name):
     """
         Creates a protocol field for nonnegative integer values that fit in a single byte
