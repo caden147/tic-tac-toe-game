@@ -18,6 +18,14 @@ sel = selectors.DefaultSelector()
 os.makedirs("logs", exist_ok=True)
 logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
 current_game = None
+protocol_callback_handler = protocol.ProtocolCallbackHandler()
+
+def update_game(values):
+    global current_game
+    current_game = values["text"]
+    print("The game board is now:")
+    print(current_game)
+protocol_callback_handler.register_callback_with_protocol(update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
 def create_connection(host, port):
     addr = (host, port)
@@ -30,7 +38,7 @@ def create_connection(host, port):
         sel,
         connection_handler.ConnectionInformation(sock, addr),
         logger,
-        protocol.ProtocolCallbackHandler(),
+        protocol_callback_handler,
     )
     sel.register(sock, events, data=connection)
     return connection
