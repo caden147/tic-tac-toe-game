@@ -40,26 +40,6 @@ Message Protocols for Communicating From the Server to the Client:
 * Chat message response: a text message protocol with type code 9 sending a text message to the desired recipient. 
 
 
-Meeting notes:
-- Have game moves by single bytes (1-9)
-
-- Join game have one field: game ID
-
-- Assign on the server side: player numbers as they connect
-
-- Quit game: "q" (type code only)
-
-- Sign in message (username/password)
-
-- Account creation message (username/password)
-
-- Single string chat protocol
-
-- Game creation protocol (username with the person you want to be able to join) 
-
- 
- 
-
 ## Technologies Used
 * Python
 * Sockets
