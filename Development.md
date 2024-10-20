@@ -31,3 +31,9 @@
 
 3. Register this function with the callback handler in server.py using protocol_callback_handler.register_callback_with_protocol. The arguments are the type code for the protocol and the message handling function.
 
+# How to Add a New Command to the Client
+1. Go to the create_request function in client.py.
+
+2. Action and value are created by splitting input from the user using a single space. Value may be the empty string. Add an else if statement for if action matches the name of your command. 
+
+3. If the value argument is valid, set the values variable and the type_code to appropriate values so that the client can send the correct message to the server. Values should be a list or tuple.
