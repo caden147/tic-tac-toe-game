@@ -72,7 +72,7 @@ class VariableLengthProtocolField(ProtocolField):
     
     def is_fixed_length(self):
         return False
-    
+
 def create_string_protocol_field(name, max_size_in_bytes):
     """
         Creates a protocol field for a string value as a function of the name and maximum size in bites
@@ -89,10 +89,16 @@ def creates_single_byte_length_field_string_protocol_field(name):
         Creates a protocol field with specified name for a variable length string where the length is contained in a single byte field
     """
     return create_string_protocol_field(name, 1)
-    
+
 def create_single_byte_nonnegative_integer_protocol_field(name):
     """
         Creates a protocol field for nonnegative integer values that fit in a single byte
     """
     field = ConstantLengthProtocolField(name, "B", 1)
     return field
+
+def create_fixed_length_string_protocol_field(name, size):
+    """Creates a fixed length string protocol field with specified name and size"""
+    field = ConstantLengthProtocolField(name, str(size) + "s", size)
+    return field
+    

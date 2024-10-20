@@ -278,3 +278,11 @@ def create_username_message_protocol(type_code: int):
     user_name_field = creates_single_byte_length_field_string_protocol_field("username")
     protocol = create_protocol(type_code, user_name_field)
     return protocol
+
+def create_nine_character_single_string_message_protocol(type_code: int):
+    """
+        Returns a message protocol for communicating a length 9 string
+    """
+    field = create_fixed_length_string_protocol_field("text", 9)
+    protocol = create_protocol(type_code, field)
+    return protocol
