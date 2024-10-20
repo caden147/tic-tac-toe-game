@@ -25,6 +25,9 @@ def update_game(values):
     current_game = values["text"]
     print("The game board is now:")
     print(current_game)
+def handle_text_message(values):
+    print("Server: " + values["text"])
+protocol_callback_handler.register_callback_with_protocol(handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
 def create_connection(host, port):
