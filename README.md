@@ -45,7 +45,7 @@ Message Protocols for Communicating From the Server to the Client:
 * Sockets
 
 ## Logging
-Logs are utilized to document errors as well as client and server connect/disconnect events. These are located in the 'source' -> 'logs' directory under 'client.log' and 'server.log'. 
+Logs are utilized to document errors as well as client and server connect/disconnect events. These are located in the 'logs' directory under 'client.log' and 'server.log'. 
 
 # Additional Resources
 * [Link to Python Documentation](https://docs.python.org/3/)
