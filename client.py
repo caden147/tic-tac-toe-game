@@ -21,6 +21,13 @@ def create_socket_from_address(address):
     sock.connect_ex(address)
     return sock
 
+def _parse_two_space_separated_values(text):
+    """Parses text into 2 space separated values. Returns None on failure."""
+    values = text.split(" ", maxsplit=1)
+    if len(values) != 2:
+        return None
+    return values
+
 class Client:
     def __init__(self, host, port, selector, logger, *, output_text_function = print, socket_creation_function = create_socket_from_address):
         self.current_game = None
@@ -107,26 +114,17 @@ class Client:
             request = protocol.Message(type_code, values)
         return request
 
-
-
-def _parse_two_space_separated_values(text):
-    """Parses text into 2 space separated values. Returns None on failure."""
-    values = text.split(" ", maxsplit=1)
-    if len(values) != 2:
-        return None
-    return values
-
-def create_request_from_text_input(text: str, client: Client):
-    """Creates a request for the server from user input text"""
-    text = text.strip()
-    action_value_split = text.split(' ', maxsplit=1)
-    action = action_value_split[0]
-    value = ""
-    #If an argument is detected for the action, put it inside value
-    if len(action_value_split) > 1:
-        value = action_value_split[1]
-    request = client.create_request(action, value)
-    return request
+    def create_request_from_text_input(self, text: str):
+        """Creates a request for the server from user input text"""
+        text = text.strip()
+        action_value_split = text.split(' ', maxsplit=1)
+        action = action_value_split[0]
+        value = ""
+        #If an argument is detected for the action, put it inside value
+        if len(action_value_split) > 1:
+            value = action_value_split[1]
+        request = self.create_request(action, value)
+        return request
 
 def perform_user_commands_through_connection(client: Client):
     done = False
@@ -135,7 +133,7 @@ def perform_user_commands_through_connection(client: Client):
         if user_input == 'exit':
             done = True
         else:
-            request = create_request_from_text_input(user_input, client)
+            request = client.create_request_from_text_input(user_input)
             if request is None:
                 print('Command not recognized.')
             else:
