@@ -9,6 +9,15 @@ The game is not implemented yet, but the client and server can send messages. On
 2. **Connect clients:** Run the `client.py` script on any desired number of different machines or terminals. This also requires command line arguments (host) (port) (action) and an optional (value). The current supported action is 'help', with the associated 'gameplay', 'setup', or '' (nothing/blank) values.
 3. **Play the game:** Players take turns entering their moves. The first player to get three in a row wins!
 
+Commands:
+* **Register an account:** Upon successfully connecting to the server, you must register an account. To do this, type 'register' followed by your chosen username and password into the terminal, seperated by spaces.
+* **Login to an account:** After you have created an account, you will need to login. Type 'login' followed by your registered username and password into the terminal, seperated by spaces.
+* **Create a game:** To create a new game, type 'create' into the terminal followed by the username of your opponent.
+* **Join a game:** To join someone else's game, type 'join' followed by the game creator's username.
+* **Make a move:** To make a move, choose a space on the board and find it's corresponding coordinate (example: b3). Type 'move' followed by the coordinate into the terminal.
+* **Quit the game:** To quit a game, enter 'quit' into the terminal.
+* **Help!:** If you'd like to see these commands during the game, type 'help', and they will be displayed.
+
 ## Game Message Protocol Specification
 The game message protocol defines the structure and format of messages exchanged between the server and clients.
 * Message format: A struct-based format is used for message serialization and deserialization.
