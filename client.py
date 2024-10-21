@@ -77,6 +77,7 @@ def create_request(action, value):
     elif action == "quit":
         if current_game is not None:
             type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
+            values = []
             current_game = None
     elif action == "join":
         if value != "" and current_game is None:
