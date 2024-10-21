@@ -64,8 +64,37 @@ def handle_signin(values, connection_information):
         text = f"You are signed in as {username}!"
         state = connection_table.get_entry_state(connection_information)
         state.username = username
+        usernames_to_connections[username] = connection_information
     message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
     connection_table.send_message_to_entry(message, connection_information)
+
+def handle_game_creation(values, connection_information):
+    creator_state = connection_table.get_entry_state(connection_information)
+    creator_username = creator_state.username
+    invited_user_username = values["username"]
+    if game_handler.create_game(creator_username, invited_user_username):
+        text = "The game was created!"
+    else:
+        text = "The game could not be created."
+    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
+    connection_table.send_message_to_entry(message, connection_information)
+
+def handle_game_join(values, connection_information):
+    joiner_state = connection_table.get_entry_state(connection_information)
+    joiner_username = joiner_state.username
+    other_player_username = values["username"]
+    if game_handler.game_exists(joiner_username, other_player_username):
+        game = game_handler.get_game(joiner_username, other_player_username)
+        joiner_state.current_game = game
+        game_text = game.compute_text()
+        game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
+        connection_table.send_message_to_entry(game_message, connection_information)
+        if other_player_username in usernames_to_connections:
+            other_player_connection_information = usernames_to_connections[other_player_username]
+            join_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{other_player_username} has joined your game!",))
+            connection_table.send_message_to_entry(join_message, other_player_connection_information)
+
+
 
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
@@ -74,7 +103,11 @@ protocol_callback_handler.register_callback_with_protocol(handle_account_creatio
 
 def cleanup_connection(connection_information):
     """Performs cleanup when a connection gets closed"""
+    state = connection_table.get_entry_state(connection_information)
     connection_table.remove_entry(connection_information)
+    username = state.username
+    if username is not None and username in usernames_to_connections:
+        usernames_to_connections.pop(username, None)
 
 def create_connection_handler(selector, connection, address):
     connection_information = connection_handler.ConnectionInformation(connection, address)
@@ -99,6 +132,8 @@ class AssociatedConnectionState:
 
 sel = selectors.DefaultSelector()
 connection_table = ConnectionTable()
+usernames_to_connections = {}
+game_handler = GameHandler()
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read

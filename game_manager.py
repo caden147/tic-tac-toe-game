@@ -25,6 +25,9 @@ class Game:
             return 'Tie'
         return None
 
+    def compute_text(self):
+        return "".join(self.board)
+
 class GameHandler:
     def __init__(self):
         self.games = {}
