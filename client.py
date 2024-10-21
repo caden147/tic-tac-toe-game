@@ -22,8 +22,8 @@ protocol_callback_handler = protocol.ProtocolCallbackHandler()
 
 def update_game(values):
     global current_game
-    current_game = values["text"]
     print("The game board is now:")
+    current_game = values["text"]
     print(current_game)
 def handle_text_message(values):
     print("Server: " + values["text"])
