@@ -85,6 +85,8 @@ def handle_game_join(values, connection_information):
     other_player_username = values["username"]
     if game_handler.game_exists(joiner_username, other_player_username):
         game = game_handler.get_game(joiner_username, other_player_username)
+        if joiner_state.current_game is not None:
+            handle_game_quit({}, connection_information)
         joiner_state.current_game = game
         game_text = game.compute_text()
         game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
@@ -93,6 +95,19 @@ def handle_game_join(values, connection_information):
             other_player_connection_information = usernames_to_connections[other_player_username]
             join_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{other_player_username} has joined your game!",))
             connection_table.send_message_to_entry(join_message, other_player_connection_information)
+
+def handle_game_quit(values, connection_information):
+    state = connection_table.get_entry_state(connection_information)
+    game = state.current_game
+    if game is not None:
+        other_player_username = game.compute_other_player(state.username)
+        if other_player_username in usernames_to_connections:
+            other_player_connection_information = usernames_to_connections[other_player_username]
+            quitting_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{state.username} has left your game!",))
+            connection_table.send_message_to_entry(quitting_message, other_player_connection_information)
+    else:
+        failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"You are not in a game, so you cannot quit one.",))
+        connection_table.send_message_to_entry(failure_message, connection_information)
 
 
 

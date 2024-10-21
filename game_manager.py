@@ -28,6 +28,11 @@ class Game:
     def compute_text(self):
         return "".join(self.board)
 
+    def compute_other_player(self, username):
+        if username == self.creator_username:
+            return self.invited_username
+        return self.creator_username
+
 class GameHandler:
     def __init__(self):
         self.games = {}
