@@ -24,7 +24,7 @@ def update_game(values):
     global current_game
     print("The game board is now:")
     current_game = values["text"]
-    print(current_game)
+    print("[" + current_game + "]")
 def handle_text_message(values):
     print("Server: " + values["text"])
 protocol_callback_handler.register_callback_with_protocol(handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)

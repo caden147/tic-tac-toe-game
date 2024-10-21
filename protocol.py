@@ -148,7 +148,6 @@ class MessageHandler:
 
     def _update_protocol(self, input_bytes):
         type_code = unpack_type_code_from_message(input_bytes)
-        print('type_code', type_code)
         protocol = self.protocol_map.get_protocol_with_type_code(type_code)
         self._initialize(protocol)
 
