@@ -109,6 +109,24 @@ def handle_game_quit(values, connection_information):
         failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"You are not in a game, so you cannot quit one.",))
         connection_table.send_message_to_entry(failure_message, connection_information)
 
+def handle_game_move(values, connection_information):
+    state = connection_table.get_entry_state(connection_information)
+    game = state.current_game
+    if game is None:
+        failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"You are not in a game, so you cannot make moves.",))
+        connection_table.send_message_to_entry(failure_message, connection_information)
+    else:
+        if game.make_move(state.username, values["number"]):
+            game_text = game.compute_text()
+            game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
+            connection_table.send_message_to_entry(game_message, connection_information)
+            other_player_username = game.compute_other_player(state.username)
+            if other_player_username in usernames_to_connections:
+                other_player_connection_information = usernames_to_connections[other_player_username]
+                connection_table.send_message_to_entry(game_message, other_player_connection_information)
+        else:
+            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"The move was not permitted!",))
+            connection_table.send_message_to_entry(failure_message, connection_information)
 
 
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
