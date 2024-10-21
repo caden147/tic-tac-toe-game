@@ -25,9 +25,7 @@ DATABASE_PATH = os.path.join(DATA_STORING_DIRECTORY, 'database.db')
 create_database_at_path(DATABASE_PATH)
 
 help_messages = {
-    "": "Help topics include:\ngameplay\nsetup\nregister\nlogin\ncreate-game\njoin-game\nmove\nquit\n\nType 'help' followed by the command you would like more information about.",
-    "gameplay": "When the server supports tictactoe games, you submit your move by typing the coordinates for a position and pressing enter.",
-    "setup": "When the server supports tictactoe games, you will create a game with the create command and join a game with the join command.",
+    "": "Help topics include:\nregister\nlogin\ncreate-game\njoin-game\nmove\nquit\n\nType 'help' followed by the command you would like more information about.",
     "register": "Upon successfully connecting to the server, you must register an account. To do this, type 'register' followed by your chosen username and password into the terminal, seperated by spaces.",
     "login": "After you have created an account, you will need to login. Type 'login' followed by your registered username and password into the terminal, seperated by spaces.",
     "create-game": "To create a new game, type 'create' into the terminal followed by the username of your opponent.",
