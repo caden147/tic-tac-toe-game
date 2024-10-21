@@ -16,7 +16,7 @@ Commands:
 * **Join a game:** To join someone else's game, type 'join' followed by your opponent's username.
 * **Make a move:** To make a move, choose a space on the board and find it's corresponding coordinate. The columns are designated by 'a', 'b', or 'c'. The rows are '1', '2', or '3'. An example coordinate would be 'b3'. Type 'move' followed by the chosen coordinate into the terminal to make your move. You can only make a move on empty spaces.
 * **Quit the game:** To quit a game, enter 'quit' into the terminal.
-* **Help!:** If you'd like to see these commands during the game, type 'help', and they will be displayed.
+* **Help!:** If you'd like to see these commands during the game, type 'help', and the options will be displayed. Type 'help' followed by the command you would like more information about.
 
 ## Game Message Protocol Specification
 The game message protocol defines the structure and format of messages exchanged between the server and clients.

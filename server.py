@@ -25,9 +25,15 @@ DATABASE_PATH = os.path.join(DATA_STORING_DIRECTORY, 'database.db')
 create_database_at_path(DATABASE_PATH)
 
 help_messages = {
-    "": "The server will offer support for tictactoe games in the future. Help topics include\ngameplay\nsetup\n",
+    "": "Help topics include:\ngameplay\nsetup\nregister\nlogin\ncreate-game\njoin-game\nmove\nquit\n\nType 'help' followed by the command you would like more information about.",
     "gameplay": "When the server supports tictactoe games, you submit your move by typing the coordinates for a position and pressing enter.",
-    "setup": "When the server supports tictactoe games, you will create a game with the create command and join a game with the join command."
+    "setup": "When the server supports tictactoe games, you will create a game with the create command and join a game with the join command.",
+    "register": "Upon successfully connecting to the server, you must register an account. To do this, type 'register' followed by your chosen username and password into the terminal, seperated by spaces.",
+    "login": "After you have created an account, you will need to login. Type 'login' followed by your registered username and password into the terminal, seperated by spaces.",
+    "create-game": "To create a new game, type 'create' into the terminal followed by the username of your opponent.",
+    "join-game": "To join someone else's game, type 'join' followed by your opponent's username.",
+    "move": "To make a move, choose a space on the board and find it's corresponding coordinate. The columns are designated by 'a', 'b', or 'c'. The rows are '1', '2', or '3'. An example coordinate would be 'b3'. Type 'move' followed by the chosen coordinate into the terminal to make your move. You can only make a move on empty spaces.",
+    "quit": "To quit a game, enter 'quit' into the terminal."
 }
 
 protocol_callback_handler = protocol.ProtocolCallbackHandler()
