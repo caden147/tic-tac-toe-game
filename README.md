@@ -13,8 +13,8 @@ Commands:
 * **Register an account:** Upon successfully connecting to the server, you must register an account. To do this, type 'register' followed by your chosen username and password into the terminal, seperated by spaces.
 * **Login to an account:** After you have created an account, you will need to login. Type 'login' followed by your registered username and password into the terminal, seperated by spaces.
 * **Create a game:** To create a new game, type 'create' into the terminal followed by the username of your opponent.
-* **Join a game:** To join someone else's game, type 'join' followed by the game creator's username.
-* **Make a move:** To make a move, choose a space on the board and find it's corresponding coordinate (example: b3). Type 'move' followed by the coordinate into the terminal.
+* **Join a game:** To join someone else's game, type 'join' followed by your opponent's username.
+* **Make a move:** To make a move, choose a space on the board and find it's corresponding coordinate. The columns are designated by 'a', 'b', or 'c'. The rows are '1', '2', or '3'. An example coordinate would be 'b3'. Type 'move' followed by the chosen coordinate into the terminal to make your move. You can only make a move on empty spaces.
 * **Quit the game:** To quit a game, enter 'quit' into the terminal.
 * **Help!:** If you'd like to see these commands during the game, type 'help', and they will be displayed.
 
