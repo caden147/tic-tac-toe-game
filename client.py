@@ -27,9 +27,9 @@ class Client:
         self.output_text = output_text_function
         self.selector = selector
         self.logger = logger
+        self.create_socket_from_address = socket_creation_function
         self._create_protocol_callback_handler()
         self._create_connection_handler(host, port)
-        self.create_socket_from_address = socket_creation_function
 
     def update_game(self, values):
         self.output_text("The game board is now:")
@@ -48,14 +48,15 @@ class Client:
         addr = (host, port)
         print("starting connection to", addr)
         sock = self.create_socket_from_address(addr)
+        connection_information = connection_handler.ConnectionInformation(sock, addr)
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
         self.connection_handler = connection_handler.ConnectionHandler(
             self.selector,
-            connection_handler.ConnectionInformation(sock, addr),
+            connection_information,
             self.logger,
             self.protocol_callback_handler,
         )
-        self.selector.register(sock, events, data=connection_handler)
+        self.selector.register(sock, events, data=self.connection_handler)
         
     def send_message(self, message: protocol.Message):
         self.connection_handler.send_message(message)
@@ -107,6 +108,7 @@ class Client:
         return request
 
 
+
 def _parse_two_space_separated_values(text):
     """Parses text into 2 space separated values. Returns None on failure."""
     values = text.split(" ", maxsplit=1)
@@ -133,7 +135,7 @@ def perform_user_commands_through_connection(client: Client):
         if user_input == 'exit':
             done = True
         else:
-            request = create_request_from_text_input(user_input)
+            request = create_request_from_text_input(user_input, client)
             if request is None:
                 print('Command not recognized.')
             else:
