@@ -78,6 +78,7 @@ class MessageHandler:
         if len(self.bytes) >= self.protocol.get_size():
             self.values = self.protocol.unpack(self.bytes)
             self.is_done = True
+            self.bytes_index = len(self.bytes)
 
     def _update_next_expected_size(self):
         if self.protocol.is_field_fixed_length(self.field_index):

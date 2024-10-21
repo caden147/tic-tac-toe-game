@@ -64,17 +64,89 @@ def handle_signin(values, connection_information):
         text = f"You are signed in as {username}!"
         state = connection_table.get_entry_state(connection_information)
         state.username = username
+        usernames_to_connections[username] = connection_information
     message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
     connection_table.send_message_to_entry(message, connection_information)
+
+def handle_game_creation(values, connection_information):
+    creator_state = connection_table.get_entry_state(connection_information)
+    creator_username = creator_state.username
+    invited_user_username = values["username"]
+    if game_handler.create_game(creator_username, invited_user_username):
+        text = "The game was created!"
+    else:
+        text = "The game could not be created."
+    message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
+    connection_table.send_message_to_entry(message, connection_information)
+
+def handle_game_join(values, connection_information):
+    joiner_state = connection_table.get_entry_state(connection_information)
+    joiner_username = joiner_state.username
+    other_player_username = values["username"]
+    if game_handler.game_exists(joiner_username, other_player_username):
+        game = game_handler.get_game(joiner_username, other_player_username)
+        if joiner_state.current_game is not None:
+            handle_game_quit({}, connection_information)
+        joiner_state.current_game = game
+        game_text = game.compute_text()
+        game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
+        connection_table.send_message_to_entry(game_message, connection_information)
+        if other_player_username in usernames_to_connections:
+            other_player_connection_information = usernames_to_connections[other_player_username]
+            join_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{joiner_username} has joined your game!",))
+            connection_table.send_message_to_entry(join_message, other_player_connection_information)
+
+def handle_game_quit(values, connection_information):
+    state = connection_table.get_entry_state(connection_information)
+    game = state.current_game
+    if game is not None:
+        other_player_username = game.compute_other_player(state.username)
+        if other_player_username in usernames_to_connections:
+            other_player_connection_information = usernames_to_connections[other_player_username]
+            quitting_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{state.username} has left your game!",))
+            connection_table.send_message_to_entry(quitting_message, other_player_connection_information)
+    else:
+        failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"You are not in a game, so you cannot quit one.",))
+        connection_table.send_message_to_entry(failure_message, connection_information)
+
+def handle_game_move(values, connection_information):
+    state = connection_table.get_entry_state(connection_information)
+    game = state.current_game
+    if game is None:
+        failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"You are not in a game, so you cannot make moves.",))
+        connection_table.send_message_to_entry(failure_message, connection_information)
+    else:
+        if game.make_move(state.username, values["number"]):
+            game_text = game.compute_text()
+            game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
+            connection_table.send_message_to_entry(game_message, connection_information)
+            other_player_username = game.compute_other_player(state.username)
+            if other_player_username in usernames_to_connections:
+                other_player_connection_information = usernames_to_connections[other_player_username]
+                other_player_game_state = connection_table.get_entry_state(other_player_connection_information)
+                if other_player_game_state.current_game is not None and other_player_game_state.current_game.compute_other_player(other_player_username) == state.username:
+                    connection_table.send_message_to_entry(game_message, other_player_connection_information)
+        else:
+            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"The move was not permitted!",))
+            connection_table.send_message_to_entry(failure_message, connection_information)
+
 
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(create_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(handle_signin, protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(handle_account_creation, protocol_definitions.ACCOUNT_CREATION_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(handle_game_creation, protocol_definitions.GAME_CREATION_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(handle_game_join, protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(handle_game_quit, protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(handle_game_move, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
 def cleanup_connection(connection_information):
     """Performs cleanup when a connection gets closed"""
+    state = connection_table.get_entry_state(connection_information)
     connection_table.remove_entry(connection_information)
+    username = state.username
+    if username is not None and username in usernames_to_connections:
+        usernames_to_connections.pop(username, None)
 
 def create_connection_handler(selector, connection, address):
     connection_information = connection_handler.ConnectionInformation(connection, address)
@@ -99,6 +171,8 @@ class AssociatedConnectionState:
 
 sel = selectors.DefaultSelector()
 connection_table = ConnectionTable()
+usernames_to_connections = {}
+game_handler = GameHandler()
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read

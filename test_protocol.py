@@ -263,5 +263,26 @@ class TestTypeCodeOnlyMessageProtocol(unittest.TestCase):
         actual = simple_map.pack_values_given_type_code(9, {})
         self.assertEqual(expected, actual)
 
+class TestNineCharacterSingleStringMessageProtocol(unittest.TestCase):
+    def _create_protocol(self):
+        return protocol.create_nine_character_single_string_message_protocol(5)
+
+    def test_packs_correctly(self):
+        text_protocol = self._create_protocol()
+        input_text = "XO       "
+        expected = struct.pack(">B9s", 5, input_text.encode())
+        actual = text_protocol.pack(input_text)
+        self.assertEqual(expected, actual)
+
+    def test_unpacks_correctly(self):
+        text_protocol = self._create_protocol()
+        input_text = "XO       "
+        input_bytes = struct.pack(">B9s", 5, input_text.encode())
+        unpacked = text_protocol.unpack(input_bytes[1:])["text"]
+        self.assertEqual(unpacked, input_text)
+        type_code = protocol.unpack_type_code_from_message(input_bytes)
+        self.assertEqual(type_code, 5)
+
+
 if __name__ == '__main__':
     unittest.main()

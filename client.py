@@ -22,9 +22,9 @@ protocol_callback_handler = protocol.ProtocolCallbackHandler()
 
 def update_game(values):
     global current_game
-    current_game = values["text"]
     print("The game board is now:")
-    print(current_game)
+    current_game = values["text"]
+    print("[" + current_game + "]")
 def handle_text_message(values):
     print("Server: " + values["text"])
 protocol_callback_handler.register_callback_with_protocol(handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
@@ -58,6 +58,7 @@ def create_request(action, value):
     type_code = None
     values = None
     request = None
+    global current_game
     if action == "help":
         if value:
             type_code = protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE
@@ -76,6 +77,8 @@ def create_request(action, value):
     elif action == "quit":
         if current_game is not None:
             type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
+            values = []
+            current_game = None
     elif action == "join":
         if value != "" and current_game is None:
             type_code = protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE
