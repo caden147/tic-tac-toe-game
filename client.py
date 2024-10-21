@@ -60,9 +60,51 @@ class Client:
     def send_message(self, message: protocol.Message):
         self.connection_handler.send_message(message)
 
+    def close(self):
+        self.connection_handler.close()
 
+    def create_request(self, action, value):
+        """Creates a request for the server from an action value pair"""
+        type_code = None
+        values = None
+        request = None
+        if action == "help":
+            if value:
+                type_code = protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE
+                values = (value,)
+            else:
+                type_code = protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE
+                values = []
+        elif action == "login":
+            values = _parse_two_space_separated_values(value)
+            if values is not None:
+                type_code = protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE
+        elif action == "register":
+            values = _parse_two_space_separated_values(value)
+            if values is not None:
+                type_code = protocol_definitions.ACCOUNT_CREATION_PROTOCOL_TYPE_CODE
+        elif action == "quit":
+            if self.current_game is not None:
+                type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
+                values = []
+                self.current_game = None
+        elif action == "join":
+            if value != "" and self.current_game is None:
+                type_code = protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE
+                values = (value,)
+        elif action == "create" and self.current_game is None:
+            if value != "":
+                type_code = protocol_definitions.GAME_CREATION_PROTOCOL_TYPE_CODE
+                values = (value,)
+        elif action == "move":
+            if self.current_game is not None and game_actions.is_valid_move_text(value):
+                type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
+                move_number = game_actions.convert_move_text_to_move_number(value)
+                values = (move_number,)
 
-
+        if type_code is not None:
+            request = protocol.Message(type_code, values)
+        return request
 
 
 def _parse_two_space_separated_values(text):
@@ -72,51 +114,7 @@ def _parse_two_space_separated_values(text):
         return None
     return values
 
-def create_request(action, value):
-    """Creates a request for the server from an action value pair"""
-    type_code = None
-    values = None
-    request = None
-    global current_game
-    if action == "help":
-        if value:
-            type_code = protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE
-            values = (value,)
-        else:
-            type_code = protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE
-            values = []
-    elif action == "login":
-        values = _parse_two_space_separated_values(value)
-        if values is not None:
-            type_code = protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE
-    elif action == "register":
-        values = _parse_two_space_separated_values(value)
-        if values is not None:
-            type_code = protocol_definitions.ACCOUNT_CREATION_PROTOCOL_TYPE_CODE
-    elif action == "quit":
-        if current_game is not None:
-            type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
-            values = []
-            current_game = None
-    elif action == "join":
-        if value != "" and current_game is None:
-            type_code = protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE
-            values = (value,)
-    elif action == "create" and current_game is None:
-        if value != "":
-            type_code = protocol_definitions.GAME_CREATION_PROTOCOL_TYPE_CODE
-            values = (value,)
-    elif action == "move":
-        if current_game is not None and game_actions.is_valid_move_text(value):
-            type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
-            move_number = game_actions.convert_move_text_to_move_number(value)
-            values = (move_number,)
-
-    if type_code is not None:
-        request = protocol.Message(type_code, values)
-    return request
-
-def create_request_from_text_input(text: str):
+def create_request_from_text_input(text: str, client: Client):
     """Creates a request for the server from user input text"""
     text = text.strip()
     action_value_split = text.split(' ', maxsplit=1)
@@ -125,10 +123,10 @@ def create_request_from_text_input(text: str):
     #If an argument is detected for the action, put it inside value
     if len(action_value_split) > 1:
         value = action_value_split[1]
-    request = create_request(action, value)
+    request = client.create_request(action, value)
     return request
 
-def perform_user_commands_through_connection(connection_handler: connection_handler.ConnectionHandler):
+def perform_user_commands_through_connection(client: Client):
     done = False
     while not done:
         user_input = input('')
@@ -139,8 +137,8 @@ def perform_user_commands_through_connection(connection_handler: connection_hand
             if request is None:
                 print('Command not recognized.')
             else:
-                connection_handler.send_message(request)
-    connection_handler.close()
+                client.send_message(request)
+    client.close()
 
 def run_selector_loop(sel, logger):
     try:
