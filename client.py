@@ -58,6 +58,7 @@ def create_request(action, value):
     type_code = None
     values = None
     request = None
+    global current_game
     if action == "help":
         if value:
             type_code = protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE
@@ -76,7 +77,6 @@ def create_request(action, value):
     elif action == "quit":
         if current_game is not None:
             type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
-            global current_game
             current_game = None
     elif action == "join":
         if value != "" and current_game is None:
