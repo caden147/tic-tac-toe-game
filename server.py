@@ -124,7 +124,7 @@ def handle_game_move(values, connection_information):
             if other_player_username in usernames_to_connections:
                 other_player_connection_information = usernames_to_connections[other_player_username]
                 other_player_game_state = connection_table.get_entry_state(other_player_connection_information)
-                if other_player_game_state.current_game is not None and other_player_game_state.current_game.compute_other_player(other_player_username) == (f"The move was not permitted!",):
+                if other_player_game_state.current_game is not None and other_player_game_state.current_game.compute_other_player(other_player_username) == state.username:
                     connection_table.send_message_to_entry(game_message, other_player_connection_information)
         else:
             failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"The move was not permitted!",))
@@ -138,6 +138,7 @@ protocol_callback_handler.register_callback_with_protocol(handle_account_creatio
 protocol_callback_handler.register_callback_with_protocol(handle_game_creation, protocol_definitions.GAME_CREATION_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(handle_game_join, protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE)
 protocol_callback_handler.register_callback_with_protocol(handle_game_quit, protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE)
+protocol_callback_handler.register_callback_with_protocol(handle_game_move, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
 def cleanup_connection(connection_information):
     """Performs cleanup when a connection gets closed"""
