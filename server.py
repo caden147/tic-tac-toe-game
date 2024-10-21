@@ -93,7 +93,7 @@ def handle_game_join(values, connection_information):
         connection_table.send_message_to_entry(game_message, connection_information)
         if other_player_username in usernames_to_connections:
             other_player_connection_information = usernames_to_connections[other_player_username]
-            join_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{other_player_username} has joined your game!",))
+            join_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{joiner_username} has joined your game!",))
             connection_table.send_message_to_entry(join_message, other_player_connection_information)
 
 def handle_game_quit(values, connection_information):
