@@ -14,37 +14,56 @@ import protocol_definitions
 import protocol
 import game_actions
 
-sel = selectors.DefaultSelector()
-os.makedirs("logs", exist_ok=True)
-logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
-current_game = None
-protocol_callback_handler = protocol.ProtocolCallbackHandler()
 
-def update_game(values):
-    global current_game
-    print("The game board is now:")
-    current_game = values["text"]
-    print("[" + current_game + "]")
-def handle_text_message(values):
-    print("Server: " + values["text"])
-protocol_callback_handler.register_callback_with_protocol(handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
-protocol_callback_handler.register_callback_with_protocol(update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
-
-def create_connection(host, port):
-    addr = (host, port)
-    print("starting connection to", addr)
+def create_socket_from_address(address):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(False)
-    sock.connect_ex(addr)
-    events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    connection = connection_handler.ConnectionHandler(
-        sel,
-        connection_handler.ConnectionInformation(sock, addr),
-        logger,
-        protocol_callback_handler,
-    )
-    sel.register(sock, events, data=connection)
-    return connection
+    sock.connect_ex(address)
+    return sock
+
+class Client:
+    def __init__(self, host, port, selector, logger, *, output_text_function = print, socket_creation_function = create_socket_from_address):
+        self.current_game = None
+        self.output_text = output_text_function
+        self.selector = selector
+        self.logger = logger
+        self._create_protocol_callback_handler()
+        self._create_connection_handler(host, port)
+        self.create_socket_from_address = socket_creation_function
+
+    def update_game(self, values):
+        self.output_text("The game board is now:")
+        self.current_game = values["text"]
+        self.output_text("[" + self.current_game + "]")
+
+    def handle_text_message(self, values):
+        self.output_text("Server: " + values["text"])
+
+    def _create_protocol_callback_handler(self):
+        self.protocol_callback_handler = protocol.ProtocolCallbackHandler()
+        self.protocol_callback_handler.register_callback_with_protocol(self.handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
+        self.protocol_callback_handler.register_callback_with_protocol(self.update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
+
+    def _create_connection_handler(self, host, port):
+        addr = (host, port)
+        print("starting connection to", addr)
+        sock = self.create_socket_from_address(addr)
+        events = selectors.EVENT_READ | selectors.EVENT_WRITE
+        self.connection_handler = connection_handler.ConnectionHandler(
+            self.selector,
+            connection_handler.ConnectionInformation(sock, addr),
+            self.logger,
+            self.protocol_callback_handler,
+        )
+        self.selector.register(sock, events, data=connection_handler)
+        
+    def send_message(self, message: protocol.Message):
+        self.connection_handler.send_message(message)
+
+
+
+
+
 
 def _parse_two_space_separated_values(text):
     """Parses text into 2 space separated values. Returns None on failure."""
@@ -123,35 +142,44 @@ def perform_user_commands_through_connection(connection_handler: connection_hand
                 connection_handler.send_message(request)
     connection_handler.close()
 
-if len(sys.argv) != 3:
-    print("usage:", sys.argv[0], "<host> <port>")
-    sys.exit(1)
+def run_selector_loop(sel, logger):
+    try:
+        while True:
+            events = sel.select(timeout=None)
+            for key, mask in events:
+                message = key.data
+                try:
+                    message.process_events(mask)
+                except Exception:
+                    logger.log_message(
+                        f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
+                    )
+                    message.close()
+            # Check for a socket being monitored to continue.
+            if not sel.get_map():
+                break
+    except KeyboardInterrupt:
+        print("caught keyboard interrupt, exiting")
+    finally:
+        sel.close()
 
-host, port = sys.argv[1], int(sys.argv[2])
+def main():
+    sel = selectors.DefaultSelector()
+    os.makedirs("logs", exist_ok=True)
+    client_logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
 
+    if len(sys.argv) != 3:
+        print("usage:", sys.argv[0], "<host> <port>")
+        sys.exit(1)
 
-connection = create_connection(host, port)
-#Run the client input loop in a separate thread
-client_input_thread = Thread(target=perform_user_commands_through_connection, args=(connection,))
-client_input_thread.start()
+    host, port = sys.argv[1], int(sys.argv[2])
 
+    connection = Client(host, port, sel, client_logger)
+    #Run the client input loop in a separate thread
+    client_input_thread = Thread(target=perform_user_commands_through_connection, args=(connection,))
+    client_input_thread.start()
 
-try:
-    while True:
-        events = sel.select(timeout=None)
-        for key, mask in events:
-            message = key.data
-            try:
-                message.process_events(mask)
-            except Exception:
-                logger.log_message(
-                    f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
-                )
-                message.close()
-        # Check for a socket being monitored to continue.
-        if not sel.get_map():
-            break
-except KeyboardInterrupt:
-    print("caught keyboard interrupt, exiting")
-finally:
-    sel.close()
+    run_selector_loop(sel, client_logger)
+
+if __name__ == '__main__':
+    main()
