@@ -78,6 +78,7 @@ class MessageHandler:
         if len(self.bytes) >= self.protocol.get_size():
             self.values = self.protocol.unpack(self.bytes)
             self.is_done = True
+            self.bytes_index = len(self.bytes)
 
     def _update_next_expected_size(self):
         if self.protocol.is_field_fixed_length(self.field_index):
@@ -147,6 +148,7 @@ class MessageHandler:
 
     def _update_protocol(self, input_bytes):
         type_code = unpack_type_code_from_message(input_bytes)
+        print('type_code', type_code)
         protocol = self.protocol_map.get_protocol_with_type_code(type_code)
         self._initialize(protocol)
 
