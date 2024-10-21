@@ -6,8 +6,17 @@ This is a simple Tic-Tac-Toe game project that will be implemented using Python 
 The game is not implemented yet, but the client and server can send messages. Once the game has been implemented, you may play by doing the following:
 
 1. **Start the server:** Run the `server.py` script, it requires the inputs (host) and (port). These command line arguments specify the host and port location that the server will be hosted at. Sample usages: 'python server.py localhost 65432' or 'python server.py 127.52.34.21 7745'.
-2. **Connect clients:** Run the `client.py` script on any desired number of different machines or terminals. This also requires command line arguments (host) (port) (action) and an optional (value). The current supported action is 'help', with the associated 'gameplay', 'setup', or '' (nothing/blank) values.
+2. **Connect clients:** Run the `client.py` script on any desired number of different machines or terminals. This also requires command line arguments (host) (port).
 3. **Play the game:** Players take turns entering their moves. The first player to get three in a row wins!
+
+Commands:
+* **Register an account:** Upon successfully connecting to the server, you must register an account. To do this, type 'register' followed by your chosen username and password into the terminal, seperated by spaces.
+* **Login to an account:** After you have created an account, you will need to login. Type 'login' followed by your registered username and password into the terminal, seperated by spaces.
+* **Create a game:** To create a new game, type 'create' into the terminal followed by the username of your opponent.
+* **Join a game:** To join someone else's game, type 'join' followed by your opponent's username.
+* **Make a move:** To make a move, choose a space on the board and find it's corresponding coordinate. The columns are designated by 'a', 'b', or 'c'. The rows are '1', '2', or '3'. An example coordinate would be 'b3'. Type 'move' followed by the chosen coordinate into the terminal to make your move. You can only make a move on empty spaces.
+* **Quit the game:** To quit a game, enter 'quit' into the terminal.
+* **Help!:** If you'd like to see these commands during the game, type 'help', and the options will be displayed. Type 'help' followed by the command you would like more information about.
 
 ## Game Message Protocol Specification
 The game message protocol defines the structure and format of messages exchanged between the server and clients.
