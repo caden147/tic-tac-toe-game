@@ -10,11 +10,22 @@ class MockInternet:
         target = self.sockets[address]
         target.receive_message_from_socket(message)
 
+    def get_socket(self, address):
+        return self.sockets[address]
+
+    def connect_to_listening_socket(self, target_address, source_address):
+        listening_socket = self.get_socket(target_address)
+        return listening_socket.create_response_socket(source_address)
+
+    def transmit_connection_closing(self, address):
+        target = self.sockets[address]
+        target.close()
+
 class MockTCPSocket:
-    def __init__(self, internet: MockInternet):
+    def __init__(self, internet: MockInternet, address):
         """Simulates a TCP socket for testing purposes"""
         self.internet = internet
-        self.address = None
+        self.address = address
         self.receive_buffer
         self.open_for_reading = False
         self.open_for_writing = False
@@ -43,7 +54,10 @@ class MockTCPSocket:
 
     def connect_ex(self, address):
         """Connects to the specified address"""
-        pass
+        self.peer = self.internet.connect_to_listening_socket(address, self.address)
+
+    def set_peer(self, peer):
+        self.peer = peer
 
     def setblocking(self, value):
         pass
@@ -54,12 +68,18 @@ class MockTCPSocket:
     def get_address(self):
         return self.address
 
+    def get_peer_address(self):
+        return self.peer.get_address()
+
 
 class MockListeningSocket:
-    def __init__(self):
+    def __init__(self, internet: MockInternet, address):
         """Simulates a listening socket that creates connections"""
-        self.address
+        self.internet = internet
+        self.address = address
+        self.last_port_used = self.address[1]
         self.is_listening = False
+        self.created_sockets = []
 
     def setsockopt(self, *args):
         pass
@@ -72,3 +92,17 @@ class MockListeningSocket:
 
     def setblocking(self, value):
         pass
+
+    def create_response_socket(self, address):
+        self.last_port_used += 1
+        host = self.address[0]
+        new_socket = MockTCPSocket(self.internet, (host, self.last_port_used))
+        peer = self.internet.get_socket(address)
+        new_socket.set_peer(peer)
+        self.created_sockets.append(new_socket)
+
+    def accept(self):
+        next_socket = self.created_sockets.pop()
+        return next_socket, next_socket.get_peer_address()
+
+    
