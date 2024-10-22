@@ -37,3 +37,10 @@
 2. Action and value are created by splitting input from the user using a single space. Value may be the empty string. Add an else if statement for if action matches the name of your command. 
 
 3. If the value argument is valid, set the values variable and the type_code to appropriate values so that the client can send the correct message to the server. Values should be a list or tuple.
+
+# How to Make the Client Support Responding to a New Message Protocol
+1. If the protocol is not already defined and registered with the necessary protocol maps, see the instructions for defining a message protocol.
+
+2. Define a new method of the client.py Client class for responding to a message conforming to the protocol that takes a dictionary containing the values as its only argument (after the required self argument because this is a python method). The values dictionary maps field names to their values. Values at this point have already been unpacked from the bytes.  
+
+3. Register this method with the callback handler in the Client _create_protocol_callback_handler method. The arguments are the type code for the protocol and the message handling method. Do not forget to refer to the registered method with self.method_name.
