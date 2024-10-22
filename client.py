@@ -15,10 +15,11 @@ import protocol
 import game_actions
 
 
-def create_socket_from_address(address):
+def create_socket_from_address(target_address):
+    """Creates a client socket that connects to the specified address"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(False)
-    sock.connect_ex(address)
+    sock.connect_ex(target_address)
     return sock
 
 def _parse_two_space_separated_values(text):
@@ -30,6 +31,15 @@ def _parse_two_space_separated_values(text):
 
 class Client:
     def __init__(self, host, port, selector, logger, *, output_text_function = print, socket_creation_function = create_socket_from_address):
+        """
+            Handles the client side of interactions with a server
+            host: the server's host address
+            port: the server's port number
+            selector: the selector to register the client with
+            logger: the logger to use for a logging significant occurrences or errors
+            output_text_function: the function used to output text for the client. This is settable as an argument primarily to aid with testing
+            socket_creation_function: the function used to create the socket from an address, which is settable to help with testing
+        """
         self.current_game = None
         self.output_text = output_text_function
         self.selector = selector
@@ -39,19 +49,23 @@ class Client:
         self._create_connection_handler(host, port)
 
     def update_game(self, values):
+        """Updates the game state"""
         self.output_text("The game board is now:")
         self.current_game = values["text"]
         self.output_text("[" + self.current_game + "]")
 
     def handle_text_message(self, values):
+        """Displays a text message from the server"""
         self.output_text("Server: " + values["text"])
 
     def _create_protocol_callback_handler(self):
+        """Creates the callback handler to let the client respond to the server"""
         self.protocol_callback_handler = protocol.ProtocolCallbackHandler()
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
     def _create_connection_handler(self, host, port):
+        """Creates the connection handler for managing the connection with the server"""
         addr = (host, port)
         print("starting connection to", addr)
         sock = self.create_socket_from_address(addr)
@@ -66,9 +80,11 @@ class Client:
         self.selector.register(sock, events, data=self.connection_handler)
         
     def send_message(self, message: protocol.Message):
+        """Sends the message to the server"""
         self.connection_handler.send_message(message)
 
     def close(self):
+        """Closes the connection with the server"""
         self.connection_handler.close()
 
     def create_request(self, action, value):
@@ -127,6 +143,7 @@ class Client:
         return request
 
 def perform_user_commands_through_connection(client: Client):
+    """Loops taking input from the user and executing corresponding commands"""
     done = False
     while not done:
         user_input = input('')
@@ -141,6 +158,7 @@ def perform_user_commands_through_connection(client: Client):
     client.close()
 
 def run_selector_loop(sel, logger):
+    """Responds to socket write and read events"""
     try:
         while True:
             events = sel.select(timeout=None)
@@ -162,6 +180,7 @@ def run_selector_loop(sel, logger):
         sel.close()
 
 def main():
+    """The entry point for the client program"""
     sel = selectors.DefaultSelector()
     os.makedirs("logs", exist_ok=True)
     client_logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
