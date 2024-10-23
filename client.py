@@ -36,7 +36,7 @@ class Client:
             host: the server's host address
             port: the server's port number
             selector: the selector to register the client with
-            logger: the logger to use for a logging significant occurrences or errors
+            logger: the logger to use for logging significant occurrences or errors
             output_text_function: the function used to output text for the client. This is settable as an argument primarily to aid with testing
             socket_creation_function: the function used to create the socket from an address, which is settable to help with testing
         """
