@@ -221,21 +221,26 @@ class Server:
 
 
 def main():
+    """The entry point for the server program"""
+    #Handle the arguments
+    if len(sys.argv) != 3:
+        print("usage:", sys.argv[0], "<host> <port>")
+        sys.exit(1)
+    host, port = sys.argv[1], int(sys.argv[2])
+
+    #Make the logger and logging directory
     os.makedirs("logs", exist_ok=True)
     logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
 
+    #Create the database
     DATA_STORING_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
     DATABASE_PATH = os.path.join(DATA_STORING_DIRECTORY, 'database.db')
     create_database_at_path(DATABASE_PATH)
 
+    #Create the selector
     sel = selectors.DefaultSelector()
 
-    if len(sys.argv) != 3:
-        print("usage:", sys.argv[0], "<host> <port>")
-        sys.exit(1)
-
-    host, port = sys.argv[1], int(sys.argv[2])
-    
+    #Initialize the server and listen for socket events
     server = Server(host, port, sel, logger, DATABASE_PATH, create_listening_socket)
     server.listen_for_socket_events()
 
