@@ -57,6 +57,7 @@ class Server:
         self.game_handler = GameHandler()
         listening_socket = create_listening_socket((host, port))
         self.selector.register(listening_socket, selectors.EVENT_READ, data=None)
+        self._create_protocol_callback_handler()
 
     def _create_protocol_callback_handler(self):
         self.protocol_callback_handler = protocol.ProtocolCallbackHandler()
