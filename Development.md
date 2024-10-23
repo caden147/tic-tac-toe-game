@@ -27,9 +27,9 @@
 # How to Make the Server Support a New Message Protocol
 1. If the protocol is not already defined and registered with the necessary protocol maps, see the instructions for defining a message protocol.
 
-2. Define a function for responding to a message conforming to the protocol. This should take a dictionary containing the values and then the connection information as arguments. The values dictionary maps field names to their values. Values at this point have already been unpacked from the bytes. You can send a response back to the client using the connection_table's send_message_to_entry method using the message to send to the client and the connection information as arguments. (The message object is created using the type_code and the values as a list or tuple)
+2. Define a Server class method for responding to a message conforming to the protocol. This should take a dictionary containing the values and then the connection information as arguments. The values dictionary maps field names to their values. Values at this point have already been unpacked from the bytes. You can send a response back to the client using the connection_table's send_message_to_entry method using the message to send to the client and the connection information as arguments. (The message object is created using the type_code and the values as a list or tuple)
 
-3. Register this function with the callback handler in server.py using protocol_callback_handler.register_callback_with_protocol. The arguments are the type code for the protocol and the message handling function.
+3. Register this method with the callback handler in server.py using protocol_callback_handler.register_callback_with_protocol. The arguments are the type code for the protocol and the message handling function.
 
 # How to Add a New Command to the Client
 1. Go to the create_request Client method in client.py.
