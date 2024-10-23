@@ -48,6 +48,14 @@ def create_listening_socket(address):
 
 class Server:
     def __init__(self, host, port, selector, logger, database_path, listening_socket_creation_function):
+        """
+            Runs the server side of interactions with clients
+            host: the server's host address
+            port: the server's port number
+            selector: the selector used to handle connection sockets
+            logger: the logger to use for logging significant occurrences or errors
+            listening_socket_creation_function: the function used to create a socket from an address, which is settable to aid with testing
+        """
         self.selector = selector
         self.logger = logger
         self.database_path = database_path
