@@ -228,6 +228,15 @@ class Server:
         finally:
             self.selector.close()
 
+    def get_connection_table(self):
+        return self.connection_table
+
+    def get_game_manager(self):
+        return self.game_manager
+
+    def get_usernames_to_connections(self):
+        return self.usernames_to_connections
+
 
 def main():
     """The entry point for the server program"""
