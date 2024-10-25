@@ -43,7 +43,7 @@ class FileLogger(Logger):
         """Does the work of putting values in string format and storing it in the log. The current timestamp is prepended to the message. The category, if present, is used as an additional prefix."""
         value = self._convert_value_for_logging(value)
         if category is not None:
-            value += self._convert_value_for_logging(category)
+            value = self._convert_value_for_logging(category) + ": " +  value
         with open(self.path, "a+") as file:
             timestamp = datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S.%f")
             file.write(f"{timestamp}: {value}\n")
