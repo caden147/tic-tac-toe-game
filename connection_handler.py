@@ -212,7 +212,6 @@ class ConnectionHandler:
 
     def send_message(self, request: Message):
         """Sends a message to the peer"""
-        print(f"Sending message {request}")
         self.message_sender.send_message(request)
 
     def process_events(self, mask):
