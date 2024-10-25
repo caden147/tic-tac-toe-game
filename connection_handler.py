@@ -4,6 +4,18 @@ import protocol
 from protocol import Message
 import protocol_definitions
 
+RECEIVING_MESSAGE_LOG_CATEGORY = "receiving"
+SENDING_MESSAGE_LOG_CATEGORY = "sending"
+
+class MessageEvent:
+    def __init__(self, message, address):
+        """Represents a message associated with an address that was sent or received"""
+        self.message = message
+        self.address = address
+
+    def __str__(self) -> str:
+        return str(self.message) + ", " + str(self.address)
+
 class ConnectionInformation:
     """Class for keeping track of a socket and address"""
     def __init__(self, sock, addr):
@@ -30,7 +42,6 @@ class MessageSender:
     def write(self):
         """Writes bytes in the buffer to the connection socket"""
         if self.buffer:
-            self.logger.log_message(f"sending {repr(self.buffer)} to {self.addr}")
             try:
                 # Should be ready to write
                 sent = self.sock.send(self.buffer)
@@ -49,6 +60,7 @@ class MessageSender:
         message_bytes = self.protocol_map.pack_values_given_type_code(message.type_code, *message.values)
         self.buffer += message_bytes
         self.write()
+        self.logger.handle_debug_message(MessageEvent(message, self.addr), SENDING_MESSAGE_LOG_CATEGORY)
 
 class MessageReceiver:
     def __init__(self, logger, connection_information: ConnectionInformation, receiving_protocol_map: protocol.ProtocolMap, close_callback):
@@ -107,7 +119,7 @@ class MessageReceiver:
         message = Message(type_code, values)
         self.messages.append(message)
 
-        print("received message with type code", type_code, str(message), "from", self.addr)
+        self.logger.handle_debug_message(MessageEvent(message, self.addr), RECEIVING_MESSAGE_LOG_CATEGORY)
 
         #Remove the processed bytes from the buffer
         if len(self.buffer) > 0:
