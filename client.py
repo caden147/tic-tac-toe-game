@@ -183,7 +183,7 @@ def main():
     """The entry point for the client program"""
     sel = selectors.DefaultSelector()
     os.makedirs("logs", exist_ok=True)
-    client_logger = logging_utilities.Logger(os.path.join("logs", "client.log"))
+    client_logger = logging_utilities.FileLogger(os.path.join("logs", "client.log"), debugging_mode = False)
 
     if len(sys.argv) != 3:
         print("usage:", sys.argv[0], "<host> <port>")

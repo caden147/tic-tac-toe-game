@@ -248,7 +248,7 @@ def main():
 
     #Make the logger and logging directory
     os.makedirs("logs", exist_ok=True)
-    logger = logging_utilities.Logger(os.path.join("logs", "server.log"))
+    logger = logging_utilities.FileLogger(os.path.join("logs", "server.log"), debugging_mode = False)
 
     #Create the database
     DATA_STORING_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
