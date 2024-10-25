@@ -68,7 +68,8 @@ class PrimaryMemoryLogger(Logger):
             self.logs[category] = []
         self.logs[category].append(value)
 
-    def get_log(self, category):
+    def get_log(self, category = None):
+        category = self._convert_category(category)
         if category in self.logs:
             log = self.logs[category]
             log_clone = log[:]
