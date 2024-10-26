@@ -1,4 +1,5 @@
 import connection_handler
+import selectors
 
 class MockInternet:
     def __init__(self):
@@ -79,6 +80,9 @@ class MockTCPSocket:
     def has_received_bytes(self):
         return len(self.receive_buffer) > 0
 
+    def is_listening_socket(self):
+        return False
+
 
 class MockListeningSocket:
     def __init__(self, internet: MockInternet, address):
@@ -113,6 +117,12 @@ class MockListeningSocket:
         next_socket = self.created_sockets.pop()
         return next_socket, next_socket.get_peer_address()
 
+    def has_received_bytes(self):
+        return len(self.created_sockets) > 0
+
+    def is_listening_socket(self):
+        return False
+
 class MockKey:
     def __init__(self, data, address, socket=None):
         self.data = data
@@ -131,7 +141,13 @@ class MockSelector:
         self.sockets = {}
 
     def select(self, timeout=None):
-        pass
+        results = []
+        for key in self.sockets:
+            socket = self.sockets[key]
+            if socket.has_received_bytes():
+                result_key = MockKey(None, None, socket) if socket.is_listening_socket() else key
+                results.append((result_key, selectors.EVENT_READ))
+        return results
 
     def register(self, socket, flags, data: connection_handler.ConnectionHandler):
         key = MockKey(data, socket)
