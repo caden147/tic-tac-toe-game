@@ -119,8 +119,12 @@ class MockKey:
         self.fileobj = socket
         self.address = address
 
+    #The equality method and hash method must be implemented to use this as a dictionary key
     def __eq__(self, other) -> bool:
         return isinstance(other, MockKey) and self.address == other.address
+
+    def __hash__(self):
+        return hash(self.address)
 
 class MockSelector:
     def __init__(self):
