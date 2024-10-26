@@ -22,11 +22,12 @@ class MockInternet:
         target.close()
 
 class MockTCPSocket:
+    SENDING_LIMIT = 1500
     def __init__(self, internet: MockInternet, address):
         """Simulates a TCP socket for testing purposes"""
         self.internet = internet
         self.address = address
-        self.receive_buffer
+        self.receive_buffer = b""
         self.open_for_reading = False
         self.open_for_writing = False
         self.has_closed = False
@@ -34,7 +35,9 @@ class MockTCPSocket:
     
     def send(self, message_bytes):
         """Simulates sending the following bytes and returns the number of bytes sent"""
-        self.internet.message_socket(self.peer.get_address(), message_bytes)
+        bytes_to_send = message_bytes[:self.SENDING_LIMIT]
+        self.internet.message_socket(self.peer.get_address(), bytes_to_send)
+        return len(bytes_to_send)
 
     def recv(self, amount_of_bytes_to_receive: int):
         """Retrieves at most the amount of bytes to receive from the buffer. Returns None if the peer closes"""
@@ -70,6 +73,9 @@ class MockTCPSocket:
 
     def get_peer_address(self):
         return self.peer.get_address()
+
+    def has_received_bytes(self):
+        return len(self.receive_buffer) > 0
 
 
 class MockListeningSocket:
