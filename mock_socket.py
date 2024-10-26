@@ -1,3 +1,5 @@
+import connection_handler
+
 class MockInternet:
     def __init__(self):
         """Used by socket simulating classes to send information to each other"""
@@ -111,4 +113,29 @@ class MockListeningSocket:
         next_socket = self.created_sockets.pop()
         return next_socket, next_socket.get_peer_address()
 
-    
+class MockKey:
+    def __init__(self, data, address, socket=None):
+        self.data = data
+        self.fileobj = socket
+        self.address = address
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, MockKey) and self.address == other.address
+
+class MockSelector:
+    def __init__(self):
+        self.sockets = {}
+
+    def select(self, timeout=None):
+        pass
+
+    def register(self, socket, flags, data: connection_handler.ConnectionHandler):
+        key = MockKey(data, socket)
+        data._set_selector_events_mask(flags)
+        self.sockets[key] = data
+
+    def unregister(self, socket):
+        for key in self.sockets:
+            if key.fileobj == socket:
+                self.sockets.pop(key)
+                return 
