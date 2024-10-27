@@ -14,7 +14,6 @@ class MockInternet:
         target.receive_message_from_socket(message)
 
     def get_socket(self, address):
-        print('self.sockets', self.sockets)
         return self.sockets[address]
 
     def connect_to_listening_socket(self, target_address, source_address):
