@@ -30,7 +30,9 @@ class MockInternet:
         return socket
 
     def create_listening_socket_from_address(self, address):
-        return MockListeningSocket(self, address)
+        socket = MockListeningSocket(self, address)
+        socket.listen()
+        return socket
 
 class MockTCPSocket:
     SENDING_LIMIT = 1500
@@ -53,7 +55,7 @@ class MockTCPSocket:
 
     def recv(self, amount_of_bytes_to_receive: int):
         """Retrieves at most the amount of bytes to receive from the buffer. Returns None if the peer closes"""
-        if self.has_closed():
+        if self.has_closed:
             return None
         else:
             result = self.receive_buffer[:amount_of_bytes_to_receive]
@@ -75,6 +77,7 @@ class MockTCPSocket:
     def connect_ex(self, address):
         """Connects to the specified address"""
         self.peer = self.internet.connect_to_listening_socket(address, self.address)
+        print('self.peer', self.peer)
 
     def set_peer(self, peer):
         self.peer = peer
@@ -82,7 +85,7 @@ class MockTCPSocket:
     def setblocking(self, value):
         pass
 
-    def receive_message_from_socket(self, message, address):
+    def receive_message_from_socket(self, message):
         self.receive_buffer += message
 
     def get_address(self):
@@ -128,6 +131,7 @@ class MockListeningSocket:
             peer = self.internet.get_socket(address)
             new_socket.set_peer(peer)
             self.created_sockets.append(new_socket)
+            return new_socket
 
     def accept(self):
         next_socket = self.created_sockets.pop()

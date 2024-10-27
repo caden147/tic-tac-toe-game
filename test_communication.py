@@ -24,6 +24,7 @@ class TestMocking(unittest.TestCase):
             server_listening_thread.start()
             client = Client('200', 19, client_selector, client_logger, output_text_function=lambda x: client_output.append(x), socket_creation_function= lambda x: internet.create_socket_from_address(x, server_address))
             client.send_message(Message(protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE, []))
+            server.close()
         except Exception as exception:
             server.close()
             raise exception
