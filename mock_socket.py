@@ -14,6 +14,7 @@ class MockInternet:
         target.receive_message_from_socket(message)
 
     def get_socket(self, address):
+        print('self.sockets', self.sockets)
         return self.sockets[address]
 
     def connect_to_listening_socket(self, target_address, source_address):
@@ -24,8 +25,10 @@ class MockInternet:
         target = self.sockets[address]
         target.close()
 
-    def create_socket_from_address(self, address):
-        return MockTCPSocket(self, address)
+    def create_socket_from_address(self, address, target_address):
+        socket = MockTCPSocket(self, address)
+        socket.connect_ex(target_address)
+        return socket
 
     def create_listening_socket_from_address(self, address):
         return MockListeningSocket(self, address)
@@ -36,6 +39,7 @@ class MockTCPSocket:
         """Simulates a TCP socket for testing purposes"""
         self.internet = internet
         self.address = address
+        self.internet.register_socket(self.address, self)
         self.receive_buffer = b""
         self.open_for_reading = False
         self.open_for_writing = False
@@ -100,6 +104,7 @@ class MockListeningSocket:
         """Simulates a listening socket that creates connections"""
         self.internet = internet
         self.address = address
+        self.internet.register_socket(self.address, self)
         self.last_port_used = self.address[1]
         self.is_listening = False
         self.created_sockets = []
