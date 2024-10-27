@@ -136,17 +136,17 @@ class MockListeningSocket:
         return False
 
 class MockKey:
-    def __init__(self, data, address, socket=None):
+    def __init__(self, data, socket):
         self.data = data
         self.fileobj = socket
-        self.address = address
+        
 
     #The equality method and hash method must be implemented to use this as a dictionary key
     def __eq__(self, other) -> bool:
-        return isinstance(other, MockKey) and self.address == other.address
+        return isinstance(other, MockKey) and self.fileobj == other.fileobj
 
     def __hash__(self):
-        return hash(self.address)
+        return hash(self.fileobj)
 
 class MockSelector:
     def __init__(self):
@@ -155,7 +155,7 @@ class MockSelector:
     def select(self, timeout=None):
         results = []
         for key in self.sockets:
-            socket = self.sockets[key]
+            socket = key.fileobj
             if socket.has_received_bytes():
                 result_key = MockKey(None, None, socket) if socket.is_listening_socket() else key
                 results.append((result_key, selectors.EVENT_READ))
@@ -180,4 +180,5 @@ class MockSelector:
         socket.set_open_for_reading(mode == selectors.EVENT_READ or is_mode_matching_both)
         socket.set_open_for_writing(mode == selectors.EVENT_WRITE or is_mode_matching_both)
 
-        
+    def close(self):
+        pass
