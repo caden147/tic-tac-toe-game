@@ -178,16 +178,8 @@ class ConnectionHandler:
         self.message_sender = MessageSender(self.logger, self.connection_information, sending_protocol_map, self.close)
 
     def _set_selector_events_mask(self, mode):
-        """Set selector to listen for events: mode is 'r', 'w', or 'rw'."""
-        if mode == "r":
-            events = selectors.EVENT_READ
-        elif mode == "w":
-            events = selectors.EVENT_WRITE
-        elif mode == "rw":
-            events = selectors.EVENT_READ | selectors.EVENT_WRITE
-        else:
-            raise ValueError(f"Invalid events mask mode {repr(mode)}.")
-        self.selector.modify(self.connection_information.sock, events, data=self)
+        """Set selector to listen for events."""
+        self.selector.modify(self.connection_information.sock, mode, data=self)
 
     def respond_to_request(self, request: Message):
         """Responds to the request message"""

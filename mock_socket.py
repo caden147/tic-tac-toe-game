@@ -24,6 +24,12 @@ class MockInternet:
         target = self.sockets[address]
         target.close()
 
+    def create_socket_from_address(self, address):
+        return MockTCPSocket(self, address)
+
+    def create_listening_socket_from_address(self, address):
+        return MockListeningSocket(self, address)
+
 class MockTCPSocket:
     SENDING_LIMIT = 1500
     def __init__(self, internet: MockInternet, address):
@@ -50,7 +56,12 @@ class MockTCPSocket:
             result = self.receive_buffer[:amount_of_bytes_to_receive]
             self.receive_buffer = self.receive_buffer[amount_of_bytes_to_receive:]
             return result
-            
+    
+    def set_open_for_writing(self, value):
+        self.open_for_writing = value
+
+    def set_open_for_reading(self, value):
+        self.open_for_reading = value
 
     def close(self):
         """Closes the connection"""
@@ -106,12 +117,13 @@ class MockListeningSocket:
         pass
 
     def create_response_socket(self, address):
-        self.last_port_used += 1
-        host = self.address[0]
-        new_socket = MockTCPSocket(self.internet, (host, self.last_port_used))
-        peer = self.internet.get_socket(address)
-        new_socket.set_peer(peer)
-        self.created_sockets.append(new_socket)
+        if self.is_listening:
+            self.last_port_used += 1
+            host = self.address[0]
+            new_socket = MockTCPSocket(self.internet, (host, self.last_port_used))
+            peer = self.internet.get_socket(address)
+            new_socket.set_peer(peer)
+            self.created_sockets.append(new_socket)
 
     def accept(self):
         next_socket = self.created_sockets.pop()
@@ -151,11 +163,21 @@ class MockSelector:
 
     def register(self, socket, flags, data: connection_handler.ConnectionHandler):
         key = MockKey(data, socket)
-        data._set_selector_events_mask(flags)
+        if data is not None:
+            data._set_selector_events_mask(flags)
         self.sockets[key] = data
 
-    def unregister(self, socket):
+    def apply_operation_on_key_corresponding_to_socket(self, socket, operation):
         for key in self.sockets:
             if key.fileobj == socket:
-                self.sockets.pop(key)
-                return 
+                return operation(key)
+
+    def unregister(self, socket):
+        self.apply_operation_on_key_corresponding_to_socket(self.sockets.pop, socket)
+
+    def modify(self, socket, mode, data):
+        is_mode_matching_both = mode == selectors.EVENT_READ & selectors.EVENT_READ
+        socket.set_open_for_reading(mode == selectors.EVENT_READ or is_mode_matching_both)
+        socket.set_open_for_writing(mode == selectors.EVENT_WRITE or is_mode_matching_both)
+
+        
