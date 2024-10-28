@@ -190,3 +190,6 @@ class MockSelector:
 
     def close(self):
         pass
+
+    def get_map(self):
+        return self.sockets

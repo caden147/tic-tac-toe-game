@@ -16,6 +16,14 @@ class MessageEvent:
     def __str__(self) -> str:
         return str(self.message) + ", " + str(self.address)
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        return isinstance(other, MessageEvent) and \
+            self.address == other.address and \
+            self.message == other.message
+
 class ConnectionInformation:
     """Class for keeping track of a socket and address"""
     def __init__(self, sock, addr):
