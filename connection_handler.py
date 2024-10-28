@@ -16,6 +16,14 @@ class MessageEvent:
     def __str__(self) -> str:
         return str(self.message) + ", " + str(self.address)
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        return isinstance(other, MessageEvent) and \
+            self.address == other.address and \
+            self.message == other.message
+
 class ConnectionInformation:
     """Class for keeping track of a socket and address"""
     def __init__(self, sock, addr):
@@ -178,16 +186,8 @@ class ConnectionHandler:
         self.message_sender = MessageSender(self.logger, self.connection_information, sending_protocol_map, self.close)
 
     def _set_selector_events_mask(self, mode):
-        """Set selector to listen for events: mode is 'r', 'w', or 'rw'."""
-        if mode == "r":
-            events = selectors.EVENT_READ
-        elif mode == "w":
-            events = selectors.EVENT_WRITE
-        elif mode == "rw":
-            events = selectors.EVENT_READ | selectors.EVENT_WRITE
-        else:
-            raise ValueError(f"Invalid events mask mode {repr(mode)}.")
-        self.selector.modify(self.connection_information.sock, events, data=self)
+        """Set selector to listen for events."""
+        self.selector.modify(self.connection_information.sock, mode, data=self)
 
     def respond_to_request(self, request: Message):
         """Responds to the request message"""

@@ -12,6 +12,14 @@ class Message:
     def __str__(self):
         return f"Type Code: {self.type_code}, Values: {self.values}"
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        return isinstance(other, Message) and \
+            other.type_code == self.type_code and \
+            other.values == self.values
+
 class ProtocolMap:
     """Maps between type codes and protocols"""
     def __init__(self, protocols):

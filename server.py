@@ -63,9 +63,10 @@ class Server:
         self.connection_table = ConnectionTable()
         self.usernames_to_connections = {}
         self.game_handler = GameHandler()
-        listening_socket = create_listening_socket((host, port))
+        listening_socket = self.create_socket_from_address((host, port))
         self.selector.register(listening_socket, selectors.EVENT_READ, data=None)
         self._create_protocol_callback_handler()
+        self.should_close = False
 
     def _create_protocol_callback_handler(self):
         self.protocol_callback_handler = protocol.ProtocolCallbackHandler()
@@ -207,9 +208,12 @@ class Server:
         connection_table_entry = ConnectionTableEntry(connection_handler, AssociatedConnectionState())
         self.connection_table.insert_entry(connection_table_entry)
 
+    def close(self):
+        self.should_close = True
+
     def listen_for_socket_events(self):
         try:
-            while True:
+            while not self.should_close:
                 events = self.selector.select(timeout=None)
                 for key, mask in events:
                     if key.data is None:
