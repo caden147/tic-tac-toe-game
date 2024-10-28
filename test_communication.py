@@ -1,4 +1,4 @@
-from server import Server
+from server import Server, help_messages
 from client import Client, run_selector_loop
 from mock_socket import MockInternet, MockSelector, MockListeningSocket, MockTCPSocket
 from logging_utilities import PrimaryMemoryLogger
@@ -12,6 +12,7 @@ from threading import Thread
 
 class TestMocking(unittest.TestCase):
     def test_can_send_messages_back_and_forth(self):
+        expected_message_event = connection_handler.MessageEvent(Message(0, {'text': help_messages[""]}), ('200', 19))
         client_logger = PrimaryMemoryLogger()
         server_logger = PrimaryMemoryLogger()
         internet = MockInternet()
@@ -31,7 +32,9 @@ class TestMocking(unittest.TestCase):
             server.close()
             raise exception
         results = client_logger.get_log(connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+        actual_message_event = results[0]
         print('results', results)
+        self.assertEqual(expected_message_event, actual_message_event)
 
 if __name__ == '__main__':
     unittest.main()
