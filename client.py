@@ -47,6 +47,7 @@ class Client:
         self.create_socket_from_address = socket_creation_function
         self._create_protocol_callback_handler()
         self._create_connection_handler(host, port)
+        self.is_closed = False
 
     def update_game(self, values):
         """Updates the game state"""
@@ -86,6 +87,7 @@ class Client:
     def close(self):
         """Closes the connection with the server"""
         self.connection_handler.close()
+        self.is_closed = True
 
     def create_request(self, action, value):
         """Creates a request for the server from an action value pair"""
@@ -141,6 +143,28 @@ class Client:
             value = action_value_split[1]
         request = self.create_request(action, value)
         return request
+    
+    def run_selector_loop(self):
+        """Responds to socket write and read events"""
+        try:
+            while not self.is_closed:
+                events = self.selector.select(timeout=None)
+                for key, mask in events:
+                    message = key.data
+                    try:
+                        message.process_events(mask)
+                    except Exception:
+                        self.logger.log_message(
+                            f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
+                        )
+                        message.close()
+                # Check for a socket being monitored to continue.
+                if not self.selector.get_map():
+                    break
+        except KeyboardInterrupt:
+            print("caught keyboard interrupt, exiting")
+        finally:
+            self.close()
 
 def perform_user_commands_through_connection(client: Client):
     """Loops taking input from the user and executing corresponding commands"""
@@ -157,27 +181,7 @@ def perform_user_commands_through_connection(client: Client):
                 client.send_message(request)
     client.close()
 
-def run_selector_loop(sel, logger):
-    """Responds to socket write and read events"""
-    try:
-        while True:
-            events = sel.select(timeout=None)
-            for key, mask in events:
-                message = key.data
-                try:
-                    message.process_events(mask)
-                except Exception:
-                    logger.log_message(
-                        f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
-                    )
-                    message.close()
-            # Check for a socket being monitored to continue.
-            if not sel.get_map():
-                break
-    except KeyboardInterrupt:
-        print("caught keyboard interrupt, exiting")
-    finally:
-        sel.close()
+
 
 def main():
     """The entry point for the client program"""
@@ -196,7 +200,7 @@ def main():
     client_input_thread = Thread(target=perform_user_commands_through_connection, args=(connection,))
     client_input_thread.start()
 
-    run_selector_loop(sel, client_logger)
+    connection.run_selector_loop()
 
 if __name__ == '__main__':
     main()
