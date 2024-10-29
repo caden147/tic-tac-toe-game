@@ -1,5 +1,5 @@
 import time
-from client import Client
+from client import Client, create_socket_from_address
 from logging_utilities import PrimaryMemoryLogger
 
 class TimeoutException(Exception):
@@ -51,3 +51,11 @@ class TestClientHandler:
             socket_creation_function=socket_creation_function
         )
     
+class TestClientHandlerFactory:
+    def __init__(self, server_host, server_port, *, should_use_real_sockets=False):
+        self.server_host = server_host
+        self.server_port = server_port
+        self.should_use_real_sockets=should_use_real_sockets
+        
+    def create_client():
+        pass
