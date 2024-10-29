@@ -1,4 +1,6 @@
 import time
+from client import Client
+from logging_utilities import PrimaryMemoryLogger
 
 class TimeoutException(Exception):
     """An exception indicating that something timed out"""
@@ -27,3 +29,25 @@ def wait_until_true_or_timeout(condition_function, timeout_message = "", time_to
             time_waited += waiting_time
             waiting_time = min(time_to_wait - time_waited, waiting_time*2)
 
+class TestClientHandler:
+    def __init__(self, host, port, selector, socket_creation_function):
+        """
+            Manages a client and associated data used for testing
+            host: the server host address
+            port: the server port address
+            selector: the selector
+            socket_creation_function: the socket creation function
+        """
+        self.logger = PrimaryMemoryLogger()
+        self.output = []
+        self.selector = selector
+        output_text_function=lambda x: self.output.append(x)
+        self.client = Client(
+            host,
+            port,
+            selector,
+            self.logger,
+            output_text_function=output_text_function,
+            socket_creation_function=socket_creation_function
+        )
+    
