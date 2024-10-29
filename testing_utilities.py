@@ -14,5 +14,5 @@ def wait_until_true_or_timeout(condition_function, time_to_wait = 10, starting_w
             raise TimeoutException(f"Timed out with time to wait {time_to_wait}!")
         else:
             time.sleep(waiting_time)
-            waiting_time = min(time_to_wait, waiting_time*2)
             time_waited += waiting_time
+            waiting_time = min(time_to_wait - time_waited, waiting_time*2)
