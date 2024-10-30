@@ -7,6 +7,7 @@ import selectors
 import traceback
 import os
 from threading import Thread
+from game_manager import GameHandler
 
 import connection_handler
 import logging_utilities
@@ -124,9 +125,13 @@ class Client:
                 values = (value,)
         elif action == "move":
             if self.current_game is not None and game_actions.is_valid_move_text(value):
-                type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
                 move_number = game_actions.convert_move_text_to_move_number(value)
-                values = (move_number,)
+                current_player = game_actions.compute_current_player(self.current_game)
+                if current_player == self.username:
+                    type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
+                    values = (move_number,)
+                else:
+                    return None
 
         if type_code is not None:
             request = protocol.Message(type_code, values)

@@ -6,6 +6,9 @@ class Game:
         self.board = [' ' for _ in range(9)]
         self.current_turn = creator_username
 
+        if self.current_turn not in self.players:
+            raise ValueError("Invalid current turn")
+
     def make_move(self, username, move):
         if username != self.current_turn:
             return False
@@ -13,8 +16,14 @@ class Game:
         if self.board[move_index] != ' ':
             return False
         self.board[move_index] = 'X' if username == self.creator_username else 'O'
-        self.current_turn = self.players[0] if username == self.players[1] else self.players[1]
+        self.switch_turns()
         return True
+    
+    def get_current_turn(self):
+        return self.current_turn
+    
+    def switch_turns(self):
+        self.current_turn = self.players[0] if self.current_turn == self.players[1] else self.players[1]
 
     def check_winner(self):
         winning_combos = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6)]
