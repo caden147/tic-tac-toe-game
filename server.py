@@ -161,7 +161,10 @@ class Server:
         state = self.connection_table.get_entry_state(connection_information)
         game = state.current_game
         if game is None:
-            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"You are not in a game, so you cannot make moves.",))
+            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, ("You are not in a game, so you cannot make moves.",))
+            self.connection_table.send_message_to_entry(failure_message, connection_information)
+        elif game.get_current_turn() != state.username:
+            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, ("Not your turn.",))
             self.connection_table.send_message_to_entry(failure_message, connection_information)
         else:
             if game.make_move(state.username, values["number"]):
@@ -175,7 +178,7 @@ class Server:
                     if other_player_game_state.current_game is not None and other_player_game_state.current_game.compute_other_player(other_player_username) == state.username:
                         self.connection_table.send_message_to_entry(game_message, other_player_connection_information)
             else:
-                failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"The move was not permitted!",))
+                failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, ("Invalid move.",))
                 self.connection_table.send_message_to_entry(failure_message, connection_information)
 
 

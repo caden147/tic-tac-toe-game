@@ -11,15 +11,12 @@ class Game:
 
     def make_move(self, username, move):
         if username != self.current_turn:
-            print(f"Not your turn, {username}. It's {self.current_turn}'s turn.")
             return False
         move_index = int(move) - 1
         if self.board[move_index] != ' ':
-            print(f"Position {move} is occupied.")
             return False
         self.board[move_index] = 'X' if username == self.creator_username else 'O'
         self.switch_turns()
-        print(f"Move successful. Next turn: {self.current_turn}")
         return True
     
     def get_current_turn(self):
