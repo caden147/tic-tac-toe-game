@@ -29,8 +29,13 @@ def wait_until_true_or_timeout(condition_function, timeout_message = "", time_to
             time_waited += waiting_time
             waiting_time = min(time_to_wait - time_waited, waiting_time*2)
 
+class Credentials:
+    def __init__(self, username, password=""):
+        self.username = username
+        self.password = password
+
 class TestClientHandler:
-    def __init__(self, host, port, selector, socket_creation_function):
+    def __init__(self, host, port, selector, socket_creation_function, credentials: Credentials=None):
         """
             Manages a client and associated data used for testing
             host: the server host address
@@ -50,6 +55,9 @@ class TestClientHandler:
             output_text_function=output_text_function,
             socket_creation_function=socket_creation_function
         )
+        self.credentials = credentials
+
+    
     
 class TestClientHandlerFactory:
     def __init__(self, server_host, server_port, *, should_use_real_sockets=False):
