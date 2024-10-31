@@ -5,9 +5,7 @@ from logging_utilities import PrimaryMemoryLogger
 import protocol_definitions
 from protocol import Message
 import connection_handler
-import time
 import unittest
-from threading import Thread
 from testing_utilities import *
 
 
