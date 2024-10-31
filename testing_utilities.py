@@ -98,7 +98,7 @@ class TestClientHandler:
     def get_output(self):
         return self.output[:]
 
-    def get_log(self, category=None):
+    def get_log(self, category):
         return self.logger.get_log(category)
 
     def get_username(self):
@@ -238,4 +238,11 @@ class TestCase:
                 client_thread.start()
         self._run_function_closing_on_failure(actually_run)
         self.close()
-            
+    
+    def get_log(self, user_name, category=None):
+        return self.clients[user_name].get_log(category)
+    
+    def get_output(self, user_name):
+        return self.clients[user_name].get_output()
+
+    
