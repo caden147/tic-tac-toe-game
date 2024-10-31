@@ -104,6 +104,17 @@ class TestClientHandler:
     def get_username(self):
         return self.credentials.username
 
+class WaitingCommand:
+    def __call__(self, client: TestClientHandler):
+        wait_until_true_or_timeout(lambda: self.condition_function(client))
+
+class OutputWaitingCommand(WaitingCommand):
+    def __init__(self, output):
+        self.output = output
+
+    def condition_function(self, client: TestClientHandler):
+        return self.output in client.get_output()
+
 class TestServerHandler:
     def __init__(self, host, port, selector, database_path, listening_socket_creation_function):
         self.logger = PrimaryMemoryLogger()
