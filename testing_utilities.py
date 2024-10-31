@@ -1,6 +1,8 @@
 import time
+from threading import Thread
 import selectors
 from client import Client, create_socket_from_address
+from server import Server, create_listening_socket
 from logging_utilities import PrimaryMemoryLogger
 from mock_socket import MockSelector, MockInternet
 
@@ -75,6 +77,13 @@ class TestClientHandler:
     def register(self):
         self.perform_command("register " + str(self.credentials))
 
+    def close(self):
+        self.client.close()
+
+    def run_selector_loop_without_blocking(self):
+        client_selector_thread = Thread(target=self.client.run_selector_loop)
+        client_selector_thread.start()
+
     def get_output(self):
         return self.output[:]
 
@@ -84,7 +93,22 @@ class TestClientHandler:
     def get_username(self):
         return self.credentials.username
 
-class TestClientHandlerFactory:
+class TestServerHandler:
+    def __init__(self, host, port, selector, database_path, listening_socket_creation_function):
+        self.logger = PrimaryMemoryLogger()
+        self.server = Server(host, port, selector, self.logger, database_path, listening_socket_creation_function)
+
+    def listen_for_socket_events_without_blocking(self):
+        server_listening_thread = Thread(target=self.server.listen_for_socket_events)
+        server_listening_thread.start()
+
+    def get_logger(self):
+        return self.logger
+
+    def close(self):
+        self.server.close()
+
+class TestingFactory:
     def __init__(self, server_host, server_port, *, should_use_real_sockets=False):
         self.server_host = server_host
         self.server_port = server_port
@@ -119,3 +143,27 @@ class TestClientHandlerFactory:
             return self.create_real_client(credentials)
         else:
             return self.create_mock_client(credentials)
+
+    def create_real_server(self, database_path):
+        return TestServerHandler(
+            self.server_host,
+            self.server_port,
+            selectors.DefaultSelector(),
+            database_path,
+            create_listening_socket
+            )
+
+    def create_mock_server(self, database_path):
+        return TestServerHandler(
+            self.server_host,
+            self.server_port,
+            MockSelector(),
+            database_path,
+            self.internet.create_listening_socket_from_address
+        )
+
+    def create_server(self, database_path='testing.db'):
+        if self.should_use_real_sockets:
+            return self.create_real_server(database_path)
+        else:
+            return self.create_mock_server(database_path)
