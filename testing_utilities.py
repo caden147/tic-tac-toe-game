@@ -63,6 +63,10 @@ class TestClientHandler:
             socket_creation_function=socket_creation_function
         )
         self.credentials = credentials
+        self.commands = []
+
+    def buffer_command(self, command):
+        self.commands.append(command)
 
     def perform_command(self, command: str):
         request = self.client.create_request_from_text_input(command)
@@ -70,6 +74,13 @@ class TestClientHandler:
 
     def send_message(self, message):
         self.client.send_message(message)
+
+    def perform_commands(self):
+        for command in self.commands:
+            if type(command) == str:
+                self.perform_command(command)
+            else:
+                command(self)
     
     def login(self):
         self.perform_command("login " + str(self.credentials))
@@ -167,3 +178,53 @@ class TestingFactory:
             return self.create_real_server(database_path)
         else:
             return self.create_mock_server(database_path)
+
+def create_simple_password(username: str):
+    return username + len(username) + username[0]*5
+
+class TestCase:
+    def __init__(self, server_host='localhost', server_port=9000, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=True):
+        self.factory = TestingFactory(server_host, server_port, should_use_real_sockets=use_real_sockets)
+        self.clients = {}
+        self.password_function = password_function
+        self.server = self.factory.create_server(database_path)
+        self.server.listen_for_socket_events_without_blocking()
+    
+    def _run_function_closing_on_failure(self, function):
+        try:
+            function()
+        except Exception as exception:
+            self.close()
+            raise exception
+
+    def create_client(self, user_name, password=""):
+        def actually_create_client(password):
+            if len(password) == 0:
+                password = self.password_function(user_name)
+            credentials = Credentials(user_name, password)
+            client: TestClientHandler = self.factory.create_client(credentials)
+            client.run_selector_loop_without_blocking()
+            self.clients[user_name] = client
+        self._run_function_closing_on_failure(lambda: actually_create_client(password))
+
+    def buffer_client_command(self, user_name, command):
+        client = self.clients[user_name]
+        client.buffer_command(command)
+        
+    def buffer_client_commands(self, user_name, commands):
+        for command in commands:
+            self.buffer_client_command(user_name, command)
+    
+    def close(self):
+        for client in self.clients:
+            client.close()
+        self.server.close()
+
+    def run(self):
+        def actually_run():
+            for client in self.clients:
+                client_thread = Thread(target=client.perform_commands)
+                client_thread.start()
+        self._run_function_closing_on_failure(actually_run)
+        self.close()
+            
