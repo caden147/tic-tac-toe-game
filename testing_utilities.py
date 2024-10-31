@@ -87,8 +87,8 @@ class TestClientHandler:
     def get_output(self):
         return self.output[:]
 
-    def get_logger(self):
-        return self.logger
+    def get_log(self, category=None):
+        return self.logger.get_log(category)
 
     def get_username(self):
         return self.credentials.username
@@ -102,8 +102,8 @@ class TestServerHandler:
         server_listening_thread = Thread(target=self.server.listen_for_socket_events)
         server_listening_thread.start()
 
-    def get_logger(self):
-        return self.logger
+    def get_log(self, category=None):
+        return self.logger.get_log(category)
 
     def close(self):
         self.server.close()
@@ -138,7 +138,7 @@ class TestingFactory:
             credentials,
         )
 
-    def create_client(self, credentials: Credentials):
+    def create_client(self, credentials: Credentials=None):
         if self.should_use_real_sockets:
             return self.create_real_client(credentials)
         else:
