@@ -9,3 +9,9 @@ def convert_move_text_to_move_number(text: str):
     elif letter == 'c':
         number += 6
     return number
+
+def compute_current_player(game_state: str) -> str:
+    """Determines the current player based on game state."""
+    x_moves = game_state.count('X')
+    o_moves = game_state.count('O')
+    return 'X' if x_moves == o_moves else 'O'
