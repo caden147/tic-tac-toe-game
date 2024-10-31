@@ -36,6 +36,9 @@ class Credentials:
         self.username = username
         self.password = password
 
+    def __str__(self):
+        return self.username + " " + self.password
+
 class TestClientHandler:
     def __init__(self, host, port, selector, socket_creation_function, credentials: Credentials=None):
         """
@@ -59,8 +62,28 @@ class TestClientHandler:
         )
         self.credentials = credentials
 
+    def perform_command(self, command: str):
+        request = self.client.create_request_from_text_input(command)
+        self.client.send_message(request)
+
+    def send_message(self, message):
+        self.client.send_message(message)
     
-    
+    def login(self):
+        self.perform_command("login " + str(self.credentials))
+
+    def register(self):
+        self.perform_command("register " + str(self.credentials))
+
+    def get_output(self):
+        return self.output[:]
+
+    def get_logger(self):
+        return self.logger
+
+    def get_username(self):
+        return self.credentials.username
+
 class TestClientHandlerFactory:
     def __init__(self, server_host, server_port, *, should_use_real_sockets=False):
         self.server_host = server_host
