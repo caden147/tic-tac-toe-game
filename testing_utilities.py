@@ -1,6 +1,8 @@
 import time
+import selectors
 from client import Client, create_socket_from_address
 from logging_utilities import PrimaryMemoryLogger
+from mock_socket import MockSelector, MockInternet
 
 class TimeoutException(Exception):
     """An exception indicating that something timed out"""
@@ -64,6 +66,33 @@ class TestClientHandlerFactory:
         self.server_host = server_host
         self.server_port = server_port
         self.should_use_real_sockets=should_use_real_sockets
-        
-    def create_client():
-        pass
+        if not self.should_use_real_sockets:
+            self.internet = MockInternet()
+            self.client_port = 5001
+            self.client_ip_address = 90
+
+    def create_real_client(self, credentials: Credentials=None):
+        return TestClientHandler(
+            self.server_host,
+            self.server_port,
+            selectors.DefaultSelector(),
+            create_socket_from_address,
+            credentials
+        )
+
+    def create_mock_client(self, credentials: Credentials=None):
+        client_address = (str(self.client_ip_address), self.client_port)
+        self.client_ip_address += 1
+        return TestClientHandler(
+            self.server_host,
+            self.server_port,
+            MockSelector(),
+            lambda x: self.internet.create_socket_from_address(client_address, x),
+            credentials,
+        )
+
+    def create_client(self, credentials: Credentials):
+        if self.should_use_real_sockets:
+            return self.create_real_client(credentials)
+        else:
+            return self.create_mock_client(credentials)
