@@ -43,13 +43,14 @@ class Credentials:
         return self.username + " " + self.password
 
 class TestClientHandler:
-    def __init__(self, host, port, selector, socket_creation_function, on_finish_callback, credentials: Credentials=None):
+    def __init__(self, host, port, selector, socket_creation_function, credentials: Credentials=None):
         """
             Manages a client and associated data used for testing
             host: the server host address
             port: the server port address
             selector: the selector
             socket_creation_function: the socket creation function
+            credentials: credentials for logging in as the user
         """
         self.logger = PrimaryMemoryLogger()
         self.output = []
@@ -65,7 +66,6 @@ class TestClientHandler:
         )
         self.credentials = credentials
         self.commands = []
-        self.on_finish_callback = on_finish_callback
 
     def buffer_command(self, command):
         self.commands.append(command)
@@ -83,7 +83,6 @@ class TestClientHandler:
                 self.perform_command(command)
             else:
                 command(self)
-        self.on_finish_callback()
     
     def login(self):
         self.perform_command("login " + str(self.credentials))
@@ -167,11 +166,10 @@ class TestServerHandler:
         self.server.close()
 
 class TestingFactory:
-    def __init__(self, server_host, server_port, on_client_finish_callback, *, should_use_real_sockets=False):
+    def __init__(self, server_host, server_port, *, should_use_real_sockets=False):
         self.server_host = server_host
         self.server_port = server_port
         self.should_use_real_sockets=should_use_real_sockets
-        self.on_client_finish_callback = on_client_finish_callback
         if not self.should_use_real_sockets:
             self.internet = MockInternet()
             self.client_port = 5001
@@ -183,7 +181,6 @@ class TestingFactory:
             self.server_port,
             selectors.DefaultSelector(),
             create_socket_from_address,
-            self.on_client_finish_callback,
             credentials
         )
 
@@ -195,7 +192,6 @@ class TestingFactory:
             self.server_port,
             MockSelector(),
             lambda x: self.internet.create_socket_from_address(client_address, x),
-            self.on_client_finish_callback,
             credentials,
         )
 
@@ -234,12 +230,12 @@ def create_simple_password(username: str):
 
 class TestCase:
     def __init__(self, server_host='localhost', server_port=9000, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=True):
-        self.factory = TestingFactory(server_host, server_port, self._handle_client_finishing, should_use_real_sockets=use_real_sockets)
+        self.factory = TestingFactory(server_host, server_port, should_use_real_sockets=use_real_sockets)
         self.clients = {}
         self.password_function = password_function
         self.server = self.factory.create_server(database_path)
         self.server.listen_for_socket_events_without_blocking()
-        self.active_clients = 0
+        self.active_clients = {}
     
     def _run_function_closing_on_failure(self, function):
         try:
@@ -272,19 +268,22 @@ class TestCase:
         self.server.close()
         self.active_clients = 0
 
-    def _handle_client_finishing(self):
-        self.active_clients -= 1
-
     def run(self):
         def actually_run():
-            for client in self.clients:
-                client_thread = Thread(target=self.clients[client].perform_commands)
-                self.active_clients += 1
+            for key in self.clients:
+                client = self.clients[key]
+                client_thread = Thread(target=client.perform_commands)
+                self.active_clients[client.get_username()] = client_thread
                 client_thread.start()
-            while self.active_clients > 0:
+            while self.active_clients:
                 #This prevents the clients from closing until they are no longer active without
                 #using a lot of CPU
                 time.sleep(0.1)
+                for key in self.active_clients.copy():
+                    client_thread = self.active_clients[key]
+                    if not client_thread.is_alive():
+                        self.active_clients.pop(key)
+
         self._run_function_closing_on_failure(actually_run)
         self.close()
     
