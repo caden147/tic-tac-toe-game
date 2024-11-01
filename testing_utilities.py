@@ -268,6 +268,12 @@ class TestCase:
         self.server.close()
         self.active_clients = 0
 
+    def delete_inactive_client_threads(self):
+        for key in self.active_clients.copy():
+            client_thread = self.active_clients[key]
+            if not client_thread.is_alive():
+                self.active_clients.pop(key)
+
     def run(self):
         def actually_run():
             for key in self.clients:
@@ -279,10 +285,7 @@ class TestCase:
                 #This prevents the clients from closing until they are no longer active without
                 #using a lot of CPU
                 time.sleep(0.1)
-                for key in self.active_clients.copy():
-                    client_thread = self.active_clients[key]
-                    if not client_thread.is_alive():
-                        self.active_clients.pop(key)
+                self.delete_inactive_client_threads()
 
         self._run_function_closing_on_failure(actually_run)
         self.close()
