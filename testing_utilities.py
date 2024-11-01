@@ -191,7 +191,7 @@ class TestingFactory:
             return self.create_mock_server(database_path)
 
 def create_simple_password(username: str):
-    return username + len(username) + username[0]*5
+    return username + str(len(username)) + username[0]*5
 
 class TestCase:
     def __init__(self, server_host='localhost', server_port=9000, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=True):
@@ -228,13 +228,13 @@ class TestCase:
     
     def close(self):
         for client in self.clients:
-            client.close()
+            self.clients[client].close()
         self.server.close()
 
     def run(self):
         def actually_run():
             for client in self.clients:
-                client_thread = Thread(target=client.perform_commands)
+                client_thread = Thread(target=self.clients[client].perform_commands)
                 client_thread.start()
         self._run_function_closing_on_failure(actually_run)
         self.close()
