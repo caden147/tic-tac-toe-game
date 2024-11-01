@@ -229,7 +229,7 @@ def create_simple_password(username: str):
     return username + str(len(username)) + username[0]*5
 
 class TestCase:
-    def __init__(self, server_host='localhost', server_port=9000, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=True):
+    def __init__(self, server_host='localhost', server_port=9000, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=False):
         self.factory = TestingFactory(server_host, server_port, should_use_real_sockets=use_real_sockets)
         self.clients = {}
         self.password_function = password_function
