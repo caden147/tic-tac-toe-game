@@ -16,9 +16,7 @@ class TestMocking(unittest.TestCase):
         testcase = TestCase(server_address[0], server_address[1])
         testcase.create_client("Bob")
         testcase.buffer_client_command("Bob", "help")
-        def waiting_command(client):
-            wait_until_true_or_timeout(lambda: len(client.get_log(connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)) > 0)
-        testcase.buffer_client_command("Bob", waiting_command)
+        testcase.buffer_client_command("Bob", ReceivedMessagesLengthWaitingCommand(1))
         testcase.run()
         results = testcase.get_log("Bob", connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
         output = testcase.get_output("Bob")

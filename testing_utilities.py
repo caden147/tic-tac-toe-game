@@ -3,6 +3,7 @@ from threading import Thread
 import selectors
 from client import Client, create_socket_from_address
 from server import Server, create_listening_socket
+import connection_handler
 from logging_utilities import PrimaryMemoryLogger
 from mock_socket import MockSelector, MockInternet
 
@@ -116,6 +117,39 @@ class OutputWaitingCommand(WaitingCommand):
 
     def condition_function(self, client: TestClientHandler):
         return self.output in client.get_output()
+
+class OutputLengthWaitingCommand(WaitingCommand):
+    def __init__(self, length):
+        self.length = length
+
+    def condition_function(self, client: TestClientHandler):
+        return len(client.get_output()) >= self.length
+
+class ReceivedMessagesLengthWaitingCommand(WaitingCommand):
+    def __init__(self, length):
+        self.length = length
+
+    def condition_function(self, client: TestClientHandler):
+        relevant_log = client.get_log(connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+        return len(relevant_log) >= self.length
+
+def is_type_code_in_log(type_code, log):
+    for event in log:
+        if type_code == event.message.type_code:
+            return True
+    return False
+
+class ReceivedMessageWaitingCommand(WaitingCommand):
+    def __init__(self, type_code, length=0):
+        self.type_code = type_code
+        self.length = length
+
+    def condition_function(self, client: TestClientHandler):
+        relevant_log = client.get_log(connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+        if len(relevant_log) < self.length:
+            return False
+        relevant_log = relevant_log[self.length:]
+        return is_type_code_in_log(self.type_code, relevant_log)
 
 class TestServerHandler:
     def __init__(self, host, port, selector, database_path, listening_socket_creation_function):
