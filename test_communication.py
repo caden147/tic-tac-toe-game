@@ -21,6 +21,8 @@ class TestMocking(unittest.TestCase):
         testcase.buffer_client_command("Bob", waiting_command)
         testcase.run()
         results = testcase.get_log("Bob", connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+        output = testcase.get_output("Bob")
+        print('output', output)
         actual_message_event = results[0]
         print('results', results)
         self.assertEqual(expected_message_event, actual_message_event)
