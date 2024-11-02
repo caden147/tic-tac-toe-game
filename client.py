@@ -3,6 +3,7 @@
 
 import sys
 import socket
+import time
 import selectors
 import traceback
 import os
@@ -41,6 +42,8 @@ class Client:
             output_text_function: the function used to output text for the client. This is settable as an argument primarily to aid with testing
             socket_creation_function: the function used to create the socket from an address, which is settable to help with testing
         """
+        self.host = host
+        self.port = port
         self.current_game = None
         self.output_text = output_text_function
         self.selector = selector
@@ -85,10 +88,27 @@ class Client:
         """Sends the message to the server"""
         self.connection_handler.send_message(message)
 
-    def close(self):
+    def close(self, should_reconnect=False):
         """Closes the connection with the server"""
         self.connection_handler.close()
-        self.is_closed = True
+        self.is_closed = not should_reconnect
+
+    def pause_in_between_reconnection_attempts(self):
+        time.sleep(5)
+
+    def reconnect(self):
+        self.close(should_reconnect=True)
+        done = False
+        while not done:
+            try:
+                print("Trying to reconnect...")
+                self._create_connection_handler(self.host, self.port)
+                done = True
+            except connection_handler.PeerDisconnectionException:
+                done = False
+                self.pause_in_between_reconnection_attempts()
+
+
 
     def create_request(self, action, value):
         """Creates a request for the server from an action value pair"""
@@ -158,6 +178,9 @@ class Client:
                     message = key.data
                     try:
                         message.process_events(mask)
+                    except connection_handler.PeerDisconnectionException:
+                        print("Connection failure detected. Attempting reconnection...")
+                        self.reconnect()
                     except Exception:
                         self.logger.log_message(
                             f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
