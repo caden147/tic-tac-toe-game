@@ -180,6 +180,7 @@ class Client:
                         message.process_events(mask)
                     except connection_handler.PeerDisconnectionException:
                         print("Connection failure detected. Attempting reconnection...")
+                        self.pause_in_between_reconnection_attempts()
                         self.reconnect()
                     except Exception:
                         self.logger.log_message(
