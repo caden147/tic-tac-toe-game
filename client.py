@@ -32,6 +32,7 @@ def _parse_two_space_separated_values(text):
     return values
 
 class Client:
+    #The default and maximum amount of time to wait in between reconnection attempts
     DEFAULT_RECONNECTION_TIMEOUT = 5
     MAXIMUM_RECONNECTION_TIMEOUT = 30
     def __init__(self, host, port, selector, logger, *, output_text_function = print, socket_creation_function = create_socket_from_address):
@@ -98,6 +99,7 @@ class Client:
         self.is_closed = not should_reconnect
 
     def pause_in_between_reconnection_attempts(self):
+        """Waits as long as needed in between reconnection attempts and adjusts the timeout amount if needed"""
         if self.has_received_successful_message:
             self.reconnection_timeout = self.DEFAULT_RECONNECTION_TIMEOUT
             self.has_received_successful_message = False
@@ -107,6 +109,7 @@ class Client:
             self.reconnection_timeout += 1
 
     def reconnect(self):
+        """Attempts to reconnect to the server"""
         self.close(should_reconnect=True)
         done = False
         while not done:
