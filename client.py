@@ -46,6 +46,7 @@ class Client:
             socket_creation_function: the function used to create the socket from an address, which is settable to help with testing
         """
         self.username = None
+        self.current_piece = ""
         self.reconnection_timeout = self.DEFAULT_RECONNECTION_TIMEOUT
         self.host = host
         self.port = port
@@ -65,6 +66,11 @@ class Client:
         self.current_game = values["text"]
         self.output_text("[" + self.current_game + "]")
 
+    def update_game_piece(self, values):
+        """Update the player's game piece"""
+        self.current_piece = values["character"]
+        self.output_text(f"You are playing as {self.current_piece}.")
+
     def handle_text_message(self, values):
         """Displays a text message from the server"""
         self.output_text("Server: " + values["text"])
@@ -74,6 +80,7 @@ class Client:
         self.protocol_callback_handler = protocol.ProtocolCallbackHandler()
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
+        self.protocol_callback_handler.register_callback_with_protocol(self.update_game_piece, protocol_definitions.GAME_PIECE_PROTOCOL_TYPE_CODE)
 
     def _create_connection_handler(self):
         """Creates the connection handler for managing the connection with the server"""
@@ -149,6 +156,7 @@ class Client:
                 type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
                 values = []
                 self.current_game = None
+                self.current_piece = None
         elif action == "join":
             if value != "" and self.current_game is None:
                 type_code = protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE
@@ -160,12 +168,10 @@ class Client:
         elif action == "move":
             if self.current_game and game_actions.is_valid_move_text(value):
                 move_number = game_actions.convert_move_text_to_move_number(value)
-                current_player = game_actions.compute_current_player(self.current_game)
-                if current_player == self.username:
+                current_piece = game_actions.compute_current_player(self.current_game)
+                if current_piece == self.current_piece:
                     type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
                     values = (move_number,)
-                    return protocol.Message(type_code, values)
-            return None
 
         if type_code is not None:
             request = protocol.Message(type_code, values)

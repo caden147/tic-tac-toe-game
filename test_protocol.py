@@ -283,6 +283,25 @@ class TestNineCharacterSingleStringMessageProtocol(unittest.TestCase):
         type_code = protocol.unpack_type_code_from_message(input_bytes)
         self.assertEqual(type_code, 5)
 
+class TestSingleCharacterStringMessageProtocol(unittest.TestCase):
+    def _create_protocol(self):
+        return protocol.create_single_character_string_message_protocol(2)
+    
+    def test_packs_correctly(self):
+        text_protocol = self._create_protocol()
+        input_text = "X"
+        expected = struct.pack(">Bs", 2, input_text.encode())
+        actual = text_protocol.pack(input_text)
+        self.assertEqual(expected, actual)
+
+    def test_unpacks_correctly(self):
+        text_protocol = self._create_protocol()
+        input_text = "X"
+        input_bytes = struct.pack(">Bs", 2, input_text.encode())
+        unpacked = text_protocol.unpack(input_bytes[1:])["character"]
+        self.assertEqual(unpacked, input_text)
+        type_code = protocol.unpack_type_code_from_message(input_bytes)
+        self.assertEqual(type_code, 2)
 
 if __name__ == '__main__':
     unittest.main()

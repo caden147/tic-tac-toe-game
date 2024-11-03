@@ -136,6 +136,9 @@ class Server:
             if joiner_state.current_game is not None:
                 self.handle_game_quit({}, connection_information)
             joiner_state.current_game = game
+            player_piece = game.compute_player_piece(joiner_username)
+            piece_message = Message(protocol_definitions.GAME_PIECE_PROTOCOL_TYPE_CODE, (player_piece,))
+            self.connection_table.send_message_to_entry(piece_message, connection_information)
             game_text = game.compute_text()
             game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
             self.connection_table.send_message_to_entry(game_message, connection_information)
