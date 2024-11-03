@@ -99,6 +99,10 @@ def create_single_byte_nonnegative_integer_protocol_field(name):
 
 def create_fixed_length_string_protocol_field(name, size):
     """Creates a fixed length string protocol field with specified name and size"""
-    field = ConstantLengthProtocolField(name, str(size) + "s", size)
+    if size > 1:
+        size_text = str(size) + "s"
+    else:
+        size_text = "s"
+    field = ConstantLengthProtocolField(name, size_text, size)
     return field
     
