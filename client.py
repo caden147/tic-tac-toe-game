@@ -64,7 +64,37 @@ class Client:
         """Updates the game state"""
         self.output_text("The game board is now:")
         self.current_game = values["text"]
-        self.output_text("[" + self.current_game + "]")
+        gamerow_1 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ']
+        gamerow_2 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ']
+        gamerow_3 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ']
+        for index, character in enumerate(self.current_game):
+            if character == ' ':
+                continue
+            match index + 1:
+                case 1:
+                    gamerow_1[1] = character
+                case 2:
+                    gamerow_1[5] = character
+                case 3:
+                    gamerow_1[9] = character
+                case 4:
+                    gamerow_2[1] = character
+                case 5:
+                    gamerow_2[5] = character
+                case 6:
+                    gamerow_2[9] = character
+                case 7:
+                    gamerow_3[1] = character
+                case 8:
+                    gamerow_3[5] = character
+                case 9:
+                    gamerow_3[9] = character
+        srow_1 = "".join(gamerow_1)
+        srow_2 = "".join(gamerow_2)
+        srow_3 = "".join(gamerow_3)
+        self.output_text(srow_1 + "\n___|___|___ a\n" +
+                         srow_2 + "\n___|___|___ b\n" +
+                         srow_3 + "\n   |   |    c\n 1   2   3\n")
 
     def update_game_piece(self, values):
         """Update the player's game piece"""
