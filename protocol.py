@@ -288,10 +288,25 @@ def create_username_message_protocol(type_code: int):
     protocol = create_protocol(type_code, user_name_field)
     return protocol
 
+def create_fixed_length_string_message_protocol(type_code: int, length: int, field_name: str='text'):
+    """
+        Returns a message protocol for communicating a fixed length string
+        type_code: the protocol type code
+        length: the length of fixed length strings obeying the protocol
+        field_name: the name of the fixed length string's field
+    """
+    field = create_fixed_length_string_protocol_field(field_name, length)
+    protocol = create_protocol(type_code, field)
+    return protocol
+
 def create_nine_character_single_string_message_protocol(type_code: int):
     """
         Returns a message protocol for communicating a length 9 string
     """
-    field = create_fixed_length_string_protocol_field("text", 9)
-    protocol = create_protocol(type_code, field)
-    return protocol
+    return create_fixed_length_string_message_protocol(type_code, 9)
+
+def create_single_character_string_message_protocol(type_code: int):
+    """
+        Returns a message protocol for communicating a single character string
+    """
+    return create_fixed_length_string_message_protocol(type_code, 1, "character")
