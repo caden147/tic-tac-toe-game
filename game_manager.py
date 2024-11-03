@@ -9,6 +9,9 @@ class Game:
         if self.current_turn not in self.players:
             raise ValueError("Invalid current turn")
 
+    def compute_player_piece(self, username: str):
+        return 'X' if username == self.creator_username else 'O'
+
     def make_move(self, username, move):
         if username != self.current_turn:
             return False
