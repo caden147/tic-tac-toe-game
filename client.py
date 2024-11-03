@@ -67,6 +67,7 @@ class Client:
         self.output_text("[" + self.current_game + "]")
 
     def update_game_piece(self, values):
+        """Update the player's game piece"""
         self.current_piece = values["character"]
         self.output_text(f"You are playing as {self.current_piece}.")
 
