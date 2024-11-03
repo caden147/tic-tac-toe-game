@@ -18,6 +18,10 @@ Commands:
 * **Quit the game:** To quit a game, enter 'quit' into the terminal.
 * **Help!:** If you'd like to see these commands during the game, type 'help', and the options will be displayed. Type 'help' followed by the command you would like more information about.
 
+Reconnection:
+
+When the client program detects a problem with the server connection, it tries to reconnect with the server. The amount of time that it waits after each subsequent reconnection attempt increases until it reaches the maximum waiting time of 30 seconds. If the client program receives a message from the server, it resets the waiting time back to the minimum.
+
 ## Game Message Protocol Specification
 The game message protocol defines the structure and format of messages exchanged between the server and clients.
 * Message format: A struct-based format is used for message serialization and deserialization.
