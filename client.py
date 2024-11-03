@@ -68,7 +68,7 @@ class Client:
         for index, character in enumerate(self.current_game):
             if character == ' ':
                 continue
-            match index:
+            match index + 1:
                 case 1:
                     gamerow_1[1] = character
                 case 2:
