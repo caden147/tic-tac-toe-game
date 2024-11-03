@@ -17,8 +17,8 @@ CLIENT_PROTOCOL_MAP = protocol.ProtocolMap([
     protocol.create_text_message_protocol(BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE),
     protocol.create_text_message_protocol(HELP_MESSAGE_PROTOCOL_TYPE_CODE),
     protocol.create_text_message_protocol(TEXT_MESSAGE_PROTOCOL_TYPE_CODE),
-    protocol.create_nine_character_single_string_message_protocol(GAME_UPDATE_PROTOCOL_TYPE_CODE)
-    protocol.create_single_character_string_message_protocol(GAME_PIECE_PROTOCOL_TYPE_CODE)
+    protocol.create_nine_character_single_string_message_protocol(GAME_UPDATE_PROTOCOL_TYPE_CODE),
+    protocol.create_single_character_string_message_protocol(GAME_PIECE_PROTOCOL_TYPE_CODE),
 ])
 
 #For communicating with the server
