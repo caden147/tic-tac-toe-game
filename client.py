@@ -3,6 +3,7 @@
 
 import sys
 import socket
+import time
 import selectors
 import traceback
 import os
@@ -31,6 +32,9 @@ def _parse_two_space_separated_values(text):
     return values
 
 class Client:
+    #The default and maximum amount of time to wait in between reconnection attempts
+    DEFAULT_RECONNECTION_TIMEOUT = 5
+    MAXIMUM_RECONNECTION_TIMEOUT = 30
     def __init__(self, host, port, selector, logger, *, output_text_function = print, socket_creation_function = create_socket_from_address):
         """
             Handles the client side of interactions with a server
@@ -41,14 +45,18 @@ class Client:
             output_text_function: the function used to output text for the client. This is settable as an argument primarily to aid with testing
             socket_creation_function: the function used to create the socket from an address, which is settable to help with testing
         """
+        self.reconnection_timeout = self.DEFAULT_RECONNECTION_TIMEOUT
+        self.host = host
+        self.port = port
         self.current_game = None
         self.output_text = output_text_function
         self.selector = selector
         self.logger = logger
         self.create_socket_from_address = socket_creation_function
         self._create_protocol_callback_handler()
-        self._create_connection_handler(host, port)
+        self._create_connection_handler()
         self.is_closed = False
+        self.has_received_successful_message = False
 
     def update_game(self, values):
         """Updates the game state"""
@@ -66,9 +74,9 @@ class Client:
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
-    def _create_connection_handler(self, host, port):
+    def _create_connection_handler(self):
         """Creates the connection handler for managing the connection with the server"""
-        addr = (host, port)
+        addr = (self.host, self.port)
         print("starting connection to", addr)
         sock = self.create_socket_from_address(addr)
         connection_information = connection_handler.ConnectionInformation(sock, addr)
@@ -85,10 +93,35 @@ class Client:
         """Sends the message to the server"""
         self.connection_handler.send_message(message)
 
-    def close(self):
+    def close(self, should_reconnect=False):
         """Closes the connection with the server"""
         self.connection_handler.close()
-        self.is_closed = True
+        self.is_closed = not should_reconnect
+
+    def pause_in_between_reconnection_attempts(self):
+        """Waits as long as needed in between reconnection attempts and adjusts the timeout amount if needed"""
+        if self.has_received_successful_message:
+            self.reconnection_timeout = self.DEFAULT_RECONNECTION_TIMEOUT
+            self.has_received_successful_message = False
+        print(f"Waiting {self.reconnection_timeout} seconds before reconnecting.")
+        time.sleep(self.reconnection_timeout)
+        if self.reconnection_timeout < self.MAXIMUM_RECONNECTION_TIMEOUT:
+            self.reconnection_timeout += 1
+
+    def reconnect(self):
+        """Attempts to reconnect to the server"""
+        self.close(should_reconnect=True)
+        done = False
+        while not done:
+            try:
+                print("Trying to reconnect...")
+                self._create_connection_handler()
+                done = True
+            except connection_handler.PeerDisconnectionException:
+                done = False
+                self.pause_in_between_reconnection_attempts()
+
+
 
     def create_request(self, action, value):
         """Creates a request for the server from an action value pair"""
@@ -158,6 +191,12 @@ class Client:
                     message = key.data
                     try:
                         message.process_events(mask)
+                        if mask & selectors.EVENT_READ:
+                            self.has_received_successful_message = True
+                    except connection_handler.PeerDisconnectionException:
+                        print("Connection failure detected. Attempting reconnection...")
+                        self.pause_in_between_reconnection_attempts()
+                        self.reconnect()
                     except Exception:
                         self.logger.log_message(
                             f"main: error: exception for {message.connection_information.addr}:\n{traceback.format_exc()}",
