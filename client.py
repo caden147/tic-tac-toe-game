@@ -62,10 +62,12 @@ class Client:
         """Updates the game state"""
         self.output_text("The game board is now:")
         self.current_game = values["text"]
-        gamerow_1 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ','\n']
-        gamerow_2 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ','\n']
-        gamerow_3 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ','\n']
+        gamerow_1 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ']
+        gamerow_2 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ']
+        gamerow_3 = [' ',' ',' ','|',' ',' ',' ','|',' ',' ',' ']
         for index, character in enumerate(self.current_game):
+            if character == ' ':
+                continue
             match index:
                 case 1:
                     gamerow_1[1] = character
@@ -88,9 +90,9 @@ class Client:
         srow_1 = "".join(gamerow_1)
         srow_2 = "".join(gamerow_2)
         srow_3 = "".join(gamerow_3)
-        self.output_text(srow_1 + "___|___|___ a\n" +
-                         srow_2 + "___|___|___ b\n" +
-                         srow_3 + "   |   |    c\n 1   2   3\n")
+        self.output_text(srow_1 + "\n___|___|___ a\n" +
+                         srow_2 + "\n___|___|___ b\n" +
+                         srow_3 + "\n   |   |    c\n 1   2   3\n")
 
     def handle_text_message(self, values):
         """Displays a text message from the server"""
