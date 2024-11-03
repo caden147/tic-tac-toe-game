@@ -62,7 +62,30 @@ class Client:
         """Updates the game state"""
         self.output_text("The game board is now:")
         self.current_game = values["text"]
-        self.output_text("[" + self.current_game + "]")
+        gamerow_1, gamerow_2, gamerow_3 = "   |   |   \n"
+        for index, character in enumerate(self.current_game):
+            match index:
+                case 1:
+                    gamerow_1[1] = character
+                case 2:
+                    gamerow_1[5] = character
+                case 3:
+                    gamerow_1[9] = character
+                case 4:
+                    gamerow_2[1] = character
+                case 5:
+                    gamerow_2[5] = character
+                case 6:
+                    gamerow_2[9] = character
+                case 7:
+                    gamerow_3[1] = character
+                case 8:
+                    gamerow_3[5] = character
+                case 9:
+                    gamerow_3[9] = character
+        self.output_text(gamerow_1 + "___|___|___ a")
+        self.output_text(gamerow_2 + "___|___|___ b")
+        self.output_text(gamerow_3 + "   |   |    c\n 1   2   3\n")
 
     def handle_text_message(self, values):
         """Displays a text message from the server"""
