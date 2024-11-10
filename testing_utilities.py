@@ -3,6 +3,7 @@ from threading import Thread
 import selectors
 from client import Client, create_socket_from_address
 from server import Server, create_listening_socket
+from database_management import insert_account_into_database_at_path_if_nonexistent, Account
 import connection_handler
 from logging_utilities import PrimaryMemoryLogger
 from mock_socket import MockSelector, MockInternet
@@ -236,6 +237,8 @@ class TestCase:
         self.server = self.factory.create_server(database_path)
         self.server.listen_for_socket_events_without_blocking()
         self.active_clients = {}
+        self.database_path = database_path
+        self.should_perform_automatic_login = should_perform_automatic_login
     
     def _run_function_closing_on_failure(self, function):
         try:
@@ -243,6 +246,10 @@ class TestCase:
         except Exception as exception:
             self.close()
             raise exception
+
+    def _perform_automatic_login(self, client, credentials: Credentials):
+        insert_account_into_database_at_path_if_nonexistent(Account(credentials.username, credentials.password), self.data)
+        client.login()
 
     def create_client(self, user_name, password=""):
         def actually_create_client(password):
@@ -252,6 +259,8 @@ class TestCase:
             client: TestClientHandler = self.factory.create_client(credentials)
             client.run_selector_loop_without_blocking()
             self.clients[user_name] = client
+            if self.should_perform_automatic_login:
+                self._perform_automatic_login(client, credentials)
         self._run_function_closing_on_failure(lambda: actually_create_client(password))
 
     def buffer_client_command(self, user_name, command):
