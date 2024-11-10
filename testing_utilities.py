@@ -308,4 +308,5 @@ class TestCase:
     def get_output(self, user_name):
         return self.clients[user_name].get_output()
 
-    
+    def assert_values_match_log(self, testing_class, values, user_name, category=None):
+        testing_class.assertEqual(values, self.get_log(user_name, category))

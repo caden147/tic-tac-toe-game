@@ -20,9 +20,7 @@ class TestMocking(unittest.TestCase):
         results = testcase.get_log("Bob", connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
         output = testcase.get_output("Bob")
         print('output', output)
-        actual_message_event = results[0]
-        print('results', results)
-        self.assertEqual(expected_message_event, actual_message_event)
+        testcase.assert_values_match_log(self, [expected_message_event], 'Bob', connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
 
 if __name__ == '__main__':
     unittest.main()
