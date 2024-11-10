@@ -1,7 +1,4 @@
 from server import Server, help_messages
-from client import Client
-from mock_socket import MockInternet, MockSelector, MockListeningSocket, MockTCPSocket
-from logging_utilities import PrimaryMemoryLogger
 import protocol_definitions
 from protocol import Message
 import connection_handler
@@ -17,7 +14,6 @@ class TestMocking(unittest.TestCase):
         testcase.buffer_client_command("Bob", "help")
         testcase.buffer_client_command("Bob", ReceivedMessagesLengthWaitingCommand(1))
         testcase.run()
-        results = testcase.get_log("Bob", connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
         output = testcase.get_output("Bob")
         print('output', output)
         testcase.assert_values_match_log(self, [expected_message_event], 'Bob', connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
