@@ -1,6 +1,7 @@
 import time
 from threading import Thread
 import selectors
+from protocol import Message
 from client import Client, create_socket_from_address
 from server import Server, create_listening_socket
 from database_management import insert_account_into_database_at_path_if_nonexistent, Account
@@ -234,6 +235,8 @@ class TestCase:
     DEFAULT_SERVER_HOST = 'localhost'
     DEFAULT_SERVER_ADDRESS = (DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT)
     def __init__(self, server_host=DEFAULT_SERVER_HOST, server_port=DEFAULT_SERVER_PORT, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=False):
+        self.server_host = server_host
+        self.server_port = server_port
         self.factory = TestingFactory(server_host, server_port, should_use_real_sockets=use_real_sockets)
         self.clients = {}
         self.password_function = password_function
@@ -308,5 +311,14 @@ class TestCase:
     def get_output(self, user_name):
         return self.clients[user_name].get_output()
 
+    def _preprocess_event_values(self, values):
+        output = []
+        for value in values:
+            if type(value) == Message:
+                value = connection_handler.MessageEvent(value, (self.server_host, self.server_port))
+            output.append(value)
+        return output
+
     def assert_values_match_log(self, testing_class, values, user_name, category=None):
+        values = self._preprocess_event_values(values)
         testing_class.assertEqual(values, self.get_log(user_name, category))
