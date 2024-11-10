@@ -322,3 +322,6 @@ class TestCase:
     def assert_values_match_log(self, testing_class, values, user_name, category=None):
         values = self._preprocess_event_values(values)
         testing_class.assertEqual(values, self.get_log(user_name, category))
+
+    def assert_received_values_match_log(self, testing_class, values, user_name):
+        self.assert_values_match_log(testing_class, values, user_name, connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)

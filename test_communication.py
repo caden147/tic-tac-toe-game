@@ -16,7 +16,7 @@ class TestMocking(unittest.TestCase):
         testcase.run()
         output = testcase.get_output("Bob")
         print('output', output)
-        testcase.assert_values_match_log(self, [expected_message], 'Bob', connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+        testcase.assert_received_values_match_log(self, [expected_message], 'Bob')
 
 if __name__ == '__main__':
     unittest.main()
