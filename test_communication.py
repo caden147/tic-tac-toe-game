@@ -11,9 +11,8 @@ from testing_utilities import *
 
 class TestMocking(unittest.TestCase):
     def test_can_send_messages_back_and_forth(self):
-        server_address = ('localhost', 9090)
-        expected_message_event = connection_handler.MessageEvent(Message(0, {'text': help_messages[""]}), server_address)
-        testcase = TestCase(server_address[0], server_address[1])
+        expected_message_event = connection_handler.MessageEvent(Message(0, {'text': help_messages[""]}), TestCase.DEFAULT_SERVER_ADDRESS)
+        testcase = TestCase()
         testcase.create_client("Bob")
         testcase.buffer_client_command("Bob", "help")
         testcase.buffer_client_command("Bob", ReceivedMessagesLengthWaitingCommand(1))
