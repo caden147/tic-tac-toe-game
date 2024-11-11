@@ -4,7 +4,7 @@ import selectors
 from protocol import Message
 from client import Client, create_socket_from_address
 from server import Server, create_listening_socket
-from database_management import insert_account_into_database_at_path_if_nonexistent, Account
+from database_management import insert_account_into_database_at_path_if_nonexistent, Account, create_database_at_path
 import connection_handler
 from logging_utilities import PrimaryMemoryLogger
 from mock_socket import MockSelector, MockInternet
@@ -107,6 +107,9 @@ class TestClientHandler:
 
     def get_username(self):
         return self.credentials.username
+    
+    def get_credentials(self):
+        return self.credentials
 
 class WaitingCommand:
     def __call__(self, client: TestClientHandler):
@@ -273,8 +276,9 @@ class TestCase:
             self.close()
             raise exception
 
-    def _perform_automatic_login(self, client, credentials: Credentials):
-        insert_account_into_database_at_path_if_nonexistent(Account(credentials.username, credentials.password), self.data)
+    def _perform_automatic_login(self, client):
+        credentials = client.get_credentials()
+        insert_account_into_database_at_path_if_nonexistent(Account(credentials.username, credentials.password), self.database_path)
         client.login()
 
     def create_client(self, user_name, password=""):
@@ -286,7 +290,7 @@ class TestCase:
             client.run_selector_loop_without_blocking()
             self.clients[user_name] = client
             if self.should_perform_automatic_login:
-                self._perform_automatic_login(client, credentials)
+                self._perform_automatic_login(client)
         self._run_function_closing_on_failure(lambda: actually_create_client(password))
 
     def buffer_client_command(self, user_name, command):
@@ -316,6 +320,7 @@ class TestCase:
                 client_thread = Thread(target=client.perform_commands)
                 self.active_clients[client.get_username()] = client_thread
                 client_thread.start()
+
             while self.active_clients:
                 #This prevents the clients from closing until they are no longer active without
                 #using a lot of CPU
@@ -372,3 +377,7 @@ class TestCase:
     def assert_values_match_output(self, values, user_name):
         output = self.get_output(user_name)
         self._assert_match(values, output, self._value_matches_output)
+
+def setup():
+    create_database_at_path("testing.db")
+setup()
