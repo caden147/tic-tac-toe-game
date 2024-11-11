@@ -230,6 +230,11 @@ class TestingFactory:
 def create_simple_password(username: str):
     return username + str(len(username)) + username[0]*5
 
+class SkipItem:
+    pass
+
+
+
 class TestCase:
     DEFAULT_SERVER_PORT = 9090
     DEFAULT_SERVER_HOST = 'localhost'
@@ -311,17 +316,26 @@ class TestCase:
     def get_output(self, user_name):
         return self.clients[user_name].get_output()
 
-    def _preprocess_event_values(self, values):
-        output = []
-        for value in values:
-            if type(value) == Message:
-                value = connection_handler.MessageEvent(value, (self.server_host, self.server_port))
-            output.append(value)
-        return output
+    def do_event_log_items_match(self, expected, actual: connection_handler.MessageEvent):
+        if isinstance(expected, connection_handler.MessageEvent):
+            return expected == actual
+        elif isinstance(expected, Message):
+            return connection_handler.MessageEvent(expected, (self.server_host, self.server_port)) == actual
+        elif type(expected) == int:
+            return expected == actual.message.type_code
+        elif type(expected) == SkipItem:
+            return True
 
-    def assert_values_match_log(self, testing_class, values, user_name, category=None):
-        values = self._preprocess_event_values(values)
-        testing_class.assertEqual(values, self.get_log(user_name, category))
+    def assert_values_match_log(self, values, user_name, category=None):
+        log = self.get_log(user_name, category)
+        error_message = ""
+        for index, value in enumerate(values):
+            if not self.do_event_log_items_match(value, log[index]):
+                error_message += f"Values at index {index} did not match:\n{value}\n{log[index]}\n"
+        if len(log) != len(values):
+            error_message += f"Lengths did not match! values: {len(values)} log: {len(log)}\n"
+        if error_message != "":
+            raise Exception(error_message)
 
-    def assert_received_values_match_log(self, testing_class, values, user_name):
-        self.assert_values_match_log(testing_class, values, user_name, connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+    def assert_received_values_match_log(self, values, user_name):
+        self.assert_values_match_log(values, user_name, connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
