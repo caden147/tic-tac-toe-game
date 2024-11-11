@@ -359,14 +359,16 @@ class TestCase:
     def assert_received_values_match_log(self, values, user_name):
         self.assert_values_match_log(values, user_name, connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
 
-    def _text_matches_output(self, text, output):
-        if type(text) == str:
-            return text == output
-        elif isinstance(text, TextMatcher):
-            return text.does_match_text(output)
+    def _value_matches_output(self, value, output):
+        if type(value) == str:
+            return value == output
+        elif isinstance(value, TextMatcher):
+            return value.does_match_text(output)
+        elif type(value) == SkipItem:
+            return True
         else:
             return False
 
     def assert_values_match_output(self, values, user_name):
         output = self.get_output(user_name)
-        self._assert_match(values, output, self._text_matches_output)
+        self._assert_match(values, output, self._value_matches_output)
