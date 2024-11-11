@@ -17,6 +17,7 @@ class TestMocking(unittest.TestCase):
         output = testcase.get_output("Bob")
         print('output', output)
         testcase.assert_received_values_match_log([expected_message], 'Bob')
+        testcase.assert_values_match_output(["chicken"], 'Bob')
 
 if __name__ == '__main__':
     unittest.main()

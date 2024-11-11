@@ -233,7 +233,22 @@ def create_simple_password(username: str):
 class SkipItem:
     pass
 
+class TextMatcher:
+    def does_match_text(self, text):
+        pass
 
+class ContainsMatcher(TextMatcher):
+    def __init__(self, text):
+        self.text = text
+        
+    def does_match_text(self, text):
+        return self.text in text
+
+    def __repr__(self):
+        return self.__str__()
+    
+    def __str__(self):
+        return f"ContainsMatcher({self.text})"
 
 class TestCase:
     DEFAULT_SERVER_PORT = 9090
@@ -326,16 +341,32 @@ class TestCase:
         elif type(expected) == SkipItem:
             return True
 
-    def assert_values_match_log(self, values, user_name, category=None):
-        log = self.get_log(user_name, category)
+    def _assert_match(self, expected, actual, matching_function):
         error_message = ""
-        for index, value in enumerate(values):
-            if not self.do_event_log_items_match(value, log[index]):
-                error_message += f"Values at index {index} did not match:\n{value}\n{log[index]}\n"
-        if len(log) != len(values):
-            error_message += f"Lengths did not match! values: {len(values)} log: {len(log)}\n"
+        for index in range(min(len(expected), len(actual))):
+            value = expected[index]
+            if not matching_function(value, actual[index]):
+                error_message += f"Values at index {index} did not match:\n{value}\n{actual[index]}\n"
+        if len(expected) != len(actual):
+            error_message += f"Lengths did not match! actual: {len(actual)} expected: {len(expected)}\n"
         if error_message != "":
             raise Exception(error_message)
 
+    def assert_values_match_log(self, values, user_name, category=None):
+        log = self.get_log(user_name, category)
+        self._assert_match(values, log, self.do_event_log_items_match)
+
     def assert_received_values_match_log(self, values, user_name):
         self.assert_values_match_log(values, user_name, connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+
+    def _text_matches_output(self, text, output):
+        if type(text) == str:
+            return text == output
+        elif isinstance(text, TextMatcher):
+            return text.does_match_text(output)
+        else:
+            return False
+
+    def assert_values_match_output(self, values, user_name):
+        output = self.get_output(user_name)
+        self._assert_match(values, output, self._text_matches_output)
