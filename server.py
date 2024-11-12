@@ -79,6 +79,10 @@ class Server:
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_game_quit, protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_game_move, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
+    def _send_text_message(self, text, connection_information):
+        message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
+        self.connection_table.send_message_to_entry(message, connection_information)
+
     def create_help_message(self, values, connection_information):
         label: str = values.get("text", "")
         if label in help_messages:
@@ -99,8 +103,7 @@ class Server:
             text = "Your account was successfully created with username: " + username
         except sqlite3.Error:
             text = f"The username {username} was already taken!"
-        message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
-        self.connection_table.send_message_to_entry(message, connection_information)
+        self._send_text_message(text, connection_information)
 
     def handle_signin(self, values, connection_information):
         username = values['username']
@@ -113,8 +116,7 @@ class Server:
             state = self.connection_table.get_entry_state(connection_information)
             state.username = username
             self.usernames_to_connections[username] = connection_information
-        message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
-        self.connection_table.send_message_to_entry(message, connection_information)
+        self._send_text_message(text, connection_information)
 
     def handle_game_creation(self, values, connection_information):
         creator_state = self.connection_table.get_entry_state(connection_information)
@@ -124,8 +126,7 @@ class Server:
             text = "The game was created!"
         else:
             text = "The game could not be created."
-        message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (text,))
-        self.connection_table.send_message_to_entry(message, connection_information)
+        self._send_text_message(text, connection_information)
 
     def handle_game_join(self, values, connection_information):
         joiner_state = self.connection_table.get_entry_state(connection_information)
