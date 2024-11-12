@@ -145,8 +145,7 @@ class Server:
             self.connection_table.send_message_to_entry(game_message, connection_information)
             if other_player_username in self.usernames_to_connections:
                 other_player_connection_information = self.usernames_to_connections[other_player_username]
-                join_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{joiner_username} has joined your game!",))
-                self.connection_table.send_message_to_entry(join_message, other_player_connection_information)
+                self._send_text_message(f"{joiner_username} has joined your game!", other_player_connection_information)
 
     def handle_game_quit(self, values, connection_information):
         state = self.connection_table.get_entry_state(connection_information)
@@ -155,21 +154,17 @@ class Server:
             other_player_username = game.compute_other_player(state.username)
             if other_player_username in self.usernames_to_connections:
                 other_player_connection_information = self.usernames_to_connections[other_player_username]
-                quitting_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"{state.username} has left your game!",))
-                self.connection_table.send_message_to_entry(quitting_message, other_player_connection_information)
+                self._send_text_message(f"{state.username} has left your game!", other_player_connection_information)
         else:
-            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, (f"You are not in a game, so you cannot quit one.",))
-            self.connection_table.send_message_to_entry(failure_message, connection_information)
+            self._send_text_message(f"You are not in a game, so you cannot quit one.", connection_information)
 
     def handle_game_move(self, values, connection_information):
         state = self.connection_table.get_entry_state(connection_information)
         game = state.current_game
         if game is None:
-            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, ("You are not in a game, so you cannot make moves.",))
-            self.connection_table.send_message_to_entry(failure_message, connection_information)
+            self._send_text_message("You are not in a game, so you cannot make moves.", connection_information)
         elif game.get_current_turn() != state.username:
-            failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, ("Not your turn.",))
-            self.connection_table.send_message_to_entry(failure_message, connection_information)
+            self._send_text_message("Not your turn.", connection_information)
         else:
             if game.make_move(state.username, values["number"]):
                 game_text = game.compute_text()
@@ -182,8 +177,7 @@ class Server:
                     if other_player_game_state.current_game is not None and other_player_game_state.current_game.compute_other_player(other_player_username) == state.username:
                         self.connection_table.send_message_to_entry(game_message, other_player_connection_information)
             else:
-                failure_message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, ("Invalid move.",))
-                self.connection_table.send_message_to_entry(failure_message, connection_information)
+                self._send_text_message("Invalid move.", connection_information)
 
 
     def cleanup_connection(self, connection_information):
