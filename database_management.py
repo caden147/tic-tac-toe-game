@@ -128,6 +128,17 @@ def insert_account_into_database_at_path(account: Account, path: str):
     values = (account.name, account.password)
     _insert_values_into_table_for_database_at_path(values, ACCOUNT_TABLE, path)
 
+def insert_account_into_database_at_path_if_nonexistent(account: Account, path: str):
+    """
+        Inserts the account object into the database at the specified path of the account does not exist. Otherwise, the operation fails silently.
+        account: an Account object
+        path: the path to the database
+    """ 
+    try:
+        insert_account_into_database_at_path(account, path)
+    except sqlite3.Error:
+        pass
+
 def retrieve_account_with_name_from_database_at_path(name: str, path: str):
     values = _retrieve_values_from_table_from_database_at_path_using_primary_key(ACCOUNT_TABLE, path, name)
     result = None

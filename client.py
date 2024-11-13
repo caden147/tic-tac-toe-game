@@ -105,12 +105,18 @@ class Client:
         """Displays a text message from the server"""
         self.output_text("Server: " + values["text"])
 
+    def handle_help_message(self, values):
+        """Displays a help message from the server"""
+        self.output_text("Help: " + values["text"])
+
     def _create_protocol_callback_handler(self):
         """Creates the callback handler to let the client respond to the server"""
         self.protocol_callback_handler = protocol.ProtocolCallbackHandler()
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_text_message, protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.update_game, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.update_game_piece, protocol_definitions.GAME_PIECE_PROTOCOL_TYPE_CODE)
+        self.protocol_callback_handler.register_callback_with_protocol(self.handle_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
+        self.protocol_callback_handler.register_callback_with_protocol(self.handle_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
 
     def _create_connection_handler(self):
         """Creates the connection handler for managing the connection with the server"""

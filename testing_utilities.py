@@ -1,8 +1,10 @@
 import time
 from threading import Thread
 import selectors
+from protocol import Message
 from client import Client, create_socket_from_address
 from server import Server, create_listening_socket
+from database_management import insert_account_into_database_at_path_if_nonexistent, Account, create_database_at_path
 import connection_handler
 from logging_utilities import PrimaryMemoryLogger
 from mock_socket import MockSelector, MockInternet
@@ -105,6 +107,9 @@ class TestClientHandler:
 
     def get_username(self):
         return self.credentials.username
+    
+    def get_credentials(self):
+        return self.credentials
 
 class WaitingCommand:
     def __call__(self, client: TestClientHandler):
@@ -228,14 +233,41 @@ class TestingFactory:
 def create_simple_password(username: str):
     return username + str(len(username)) + username[0]*5
 
+class SkipItem:
+    pass
+
+class TextMatcher:
+    def does_match_text(self, text):
+        pass
+
+class ContainsMatcher(TextMatcher):
+    def __init__(self, text):
+        self.text = text
+        
+    def does_match_text(self, text):
+        return self.text in text
+
+    def __repr__(self):
+        return self.__str__()
+    
+    def __str__(self):
+        return f"ContainsMatcher({self.text})"
+
 class TestCase:
-    def __init__(self, server_host='localhost', server_port=9000, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=False):
+    DEFAULT_SERVER_PORT = 9090
+    DEFAULT_SERVER_HOST = 'localhost'
+    DEFAULT_SERVER_ADDRESS = (DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT)
+    def __init__(self, server_host=DEFAULT_SERVER_HOST, server_port=DEFAULT_SERVER_PORT, use_real_sockets=False, database_path="testing.db", password_function=create_simple_password, should_perform_automatic_login=False):
+        self.server_host = server_host
+        self.server_port = server_port
         self.factory = TestingFactory(server_host, server_port, should_use_real_sockets=use_real_sockets)
         self.clients = {}
         self.password_function = password_function
         self.server = self.factory.create_server(database_path)
         self.server.listen_for_socket_events_without_blocking()
         self.active_clients = {}
+        self.database_path = database_path
+        self.should_perform_automatic_login = should_perform_automatic_login
     
     def _run_function_closing_on_failure(self, function):
         try:
@@ -243,6 +275,11 @@ class TestCase:
         except Exception as exception:
             self.close()
             raise exception
+
+    def _perform_automatic_login(self, client):
+        credentials = client.get_credentials()
+        insert_account_into_database_at_path_if_nonexistent(Account(credentials.username, credentials.password), self.database_path)
+        client.login()
 
     def create_client(self, user_name, password=""):
         def actually_create_client(password):
@@ -252,6 +289,8 @@ class TestCase:
             client: TestClientHandler = self.factory.create_client(credentials)
             client.run_selector_loop_without_blocking()
             self.clients[user_name] = client
+            if self.should_perform_automatic_login:
+                self._perform_automatic_login(client)
         self._run_function_closing_on_failure(lambda: actually_create_client(password))
 
     def buffer_client_command(self, user_name, command):
@@ -281,6 +320,7 @@ class TestCase:
                 client_thread = Thread(target=client.perform_commands)
                 self.active_clients[client.get_username()] = client_thread
                 client_thread.start()
+
             while self.active_clients:
                 #This prevents the clients from closing until they are no longer active without
                 #using a lot of CPU
@@ -296,4 +336,48 @@ class TestCase:
     def get_output(self, user_name):
         return self.clients[user_name].get_output()
 
-    
+    def do_event_log_items_match(self, expected, actual: connection_handler.MessageEvent):
+        if isinstance(expected, connection_handler.MessageEvent):
+            return expected == actual
+        elif isinstance(expected, Message):
+            return connection_handler.MessageEvent(expected, (self.server_host, self.server_port)) == actual
+        elif type(expected) == int:
+            return expected == actual.message.type_code
+        elif type(expected) == SkipItem:
+            return True
+
+    def _assert_match(self, expected, actual, matching_function):
+        error_message = ""
+        for index in range(min(len(expected), len(actual))):
+            value = expected[index]
+            if not matching_function(value, actual[index]):
+                error_message += f"Values at index {index} did not match:\n{value}\n{actual[index]}\n"
+        if len(expected) != len(actual):
+            error_message += f"Lengths did not match! actual: {len(actual)} expected: {len(expected)}\n"
+        if error_message != "":
+            raise Exception(error_message)
+
+    def assert_values_match_log(self, values, user_name, category=None):
+        log = self.get_log(user_name, category)
+        self._assert_match(values, log, self.do_event_log_items_match)
+
+    def assert_received_values_match_log(self, values, user_name):
+        self.assert_values_match_log(values, user_name, connection_handler.RECEIVING_MESSAGE_LOG_CATEGORY)
+
+    def _value_matches_output(self, value, output):
+        if type(value) == str:
+            return value == output
+        elif isinstance(value, TextMatcher):
+            return value.does_match_text(output)
+        elif type(value) == SkipItem:
+            return True
+        else:
+            return False
+
+    def assert_values_match_output(self, values, user_name):
+        output = self.get_output(user_name)
+        self._assert_match(values, output, self._value_matches_output)
+
+def setup():
+    create_database_at_path("testing.db")
+setup()
