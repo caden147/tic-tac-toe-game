@@ -8,6 +8,7 @@ import selectors
 import traceback
 import os
 from threading import Thread
+import argparse
 from game_manager import GameHandler
 
 import connection_handler
@@ -276,11 +277,16 @@ def main():
     os.makedirs("logs", exist_ok=True)
     client_logger = logging_utilities.FileLogger(os.path.join("logs", "client.log"), debugging_mode = False)
 
-    if len(sys.argv) != 3:
-        print("usage:", sys.argv[0], "<host> <port>")
+    parser = argparse.ArgumentParser(prog='client.py', description='The client program for playing tictactoe.')
+    parser.add_argument("-i")
+    parser.add_argument("-p", type=int)
+    arguments = parser.parse_args()
+
+    if None in [arguments.i, arguments.p]:
+        print("usage:", sys.argv[0], "-i <host> -p <port>")
         sys.exit(1)
 
-    host, port = sys.argv[1], int(sys.argv[2])
+    host, port = arguments.i, arguments.p
 
     connection = Client(host, port, sel, client_logger)
     #Run the client input loop in a separate thread
