@@ -277,13 +277,13 @@ def main():
     os.makedirs("logs", exist_ok=True)
     client_logger = logging_utilities.FileLogger(os.path.join("logs", "client.log"), debugging_mode = False)
 
-    parser = argparse.ArgumentParser(prog='client.py', description='The client program for playing tictactoe.')
+    parser = argparse.ArgumentParser(prog='client.py', description='The client program for playing tictactoe.', usage=f"usage: {sys.argv[0]} -i <host> -p <port>")
     parser.add_argument("-i")
     parser.add_argument("-p", type=int)
     arguments = parser.parse_args()
 
     if None in [arguments.i, arguments.p]:
-        print("usage:", sys.argv[0], "-i <host> -p <port>")
+        parser.print_usage()
         sys.exit(1)
 
     host, port = arguments.i, arguments.p
