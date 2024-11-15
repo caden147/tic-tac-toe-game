@@ -38,6 +38,9 @@ class Game:
             return 'Tie'
         return None
 
+    def is_over(self):
+        return self.check_winner() is not None
+
     def compute_text(self):
         return "".join(self.board)
 
@@ -50,12 +53,15 @@ class GameHandler:
     def __init__(self):
         self.games = {}
 
+    def _should_create_game_with_id(self, game_id):
+        return game_id not in self.games or self.games[game_id].is_over()
+
     def create_game(self, creator_username, invited_username):
         game_id = self.sorted_game_id(creator_username, invited_username)
-        if game_id in self.games:
-            return False
-        self.games[game_id] = Game(creator_username, invited_username)
-        return game_id
+        if self._should_create_game_with_id(game_id):
+            self.games[game_id] = Game(creator_username, invited_username)
+            return game_id
+        return False
 
     def get_game(self, creator_username, invited_username):
         game_id = self.sorted_game_id(creator_username, invited_username)
