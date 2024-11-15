@@ -253,7 +253,7 @@ def main():
 
     #Handle the arguments
     if arguments.p is None:
-        print("usage:", sys.argv[0], "[-i <host>] -p <port>")
+        parser.print_usage()
         sys.exit(1)
     host, port = arguments.i, arguments.p
 
