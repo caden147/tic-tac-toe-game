@@ -246,7 +246,7 @@ class Server:
 
 def main():
     """The entry point for the server program"""
-    parser = argparse.ArgumentParser(prog='client.py', description='The client program for playing tictactoe.', usage=f"usage: {sys.argv[0]} [-i <host>] -p <port>")
+    parser = argparse.ArgumentParser(prog='server.py', description='The server program for hosting tictactoe games.', usage=f"usage: {sys.argv[0]} [-i <host>] -p <port>")
     parser.add_argument("-i", default="0.0.0.0")
     parser.add_argument("-p", type=int)
     arguments = parser.parse_args()
