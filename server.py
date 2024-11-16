@@ -6,6 +6,7 @@ import socket
 import selectors
 import traceback
 import os
+import argparse
 
 import protocol
 from protocol import Message
@@ -245,11 +246,16 @@ class Server:
 
 def main():
     """The entry point for the server program"""
+    parser = argparse.ArgumentParser(prog='server.py', description='The server program for hosting tictactoe games.', usage=f"usage: {sys.argv[0]} [-i <host>] -p <port>")
+    parser.add_argument("-i", default="0.0.0.0")
+    parser.add_argument("-p", type=int)
+    arguments = parser.parse_args()
+
     #Handle the arguments
-    if len(sys.argv) != 3:
-        print("usage:", sys.argv[0], "<host> <port>")
+    if arguments.p is None:
+        parser.print_usage()
         sys.exit(1)
-    host, port = sys.argv[1], int(sys.argv[2])
+    host, port = arguments.i, arguments.p
 
     #Make the logger and logging directory
     os.makedirs("logs", exist_ok=True)
