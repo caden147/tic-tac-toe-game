@@ -55,6 +55,27 @@ class TestMocking(unittest.TestCase):
         ]
         testcase.assert_received_values_match_log(expected_alice_messages, "Alice")
 
+    def test_second_player_join(self):
+        testcase = TestCase(should_perform_automatic_login=True)
+        testcase.create_client("Bob")
+        testcase.create_client("Alice")
+        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(4)])
+        testcase.buffer_client_commands("Alice", [ReceivedMessagesLengthWaitingCommand(2), 'join Bob', ReceivedMessagesLengthWaitingCommand(4), 'quit'])
+        expected_alice_messages = [
+            SkipItem(),
+            create_text_message("Bob invited you to a game!"),
+            PLAYING_O_MESSAGE,
+            EMPTY_GAME_BOARD_MESSAGE,
+        ]
+        expected_bob_messages = [
+            SkipItem(),
+            GAME_CREATION_MESSAGE,
+            create_text_message("Alice has joined your game!"),
+            create_text_message("Alice has left your game!")
+        ]
+        testcase.run()
+        testcase.assert_received_values_match_log(expected_alice_messages, "Alice")
+        testcase.assert_received_values_match_log(expected_bob_messages, 'Bob')
 
 if __name__ == '__main__':
     unittest.main()
