@@ -31,8 +31,9 @@ class ConnectionTableEntry:
         return self.__str__()
 
 class ConnectionTable:
-    def __init__(self):
+    def __init__(self, usernames_to_connections):
         """A table for keeping track of connections"""
+        self.usernames_to_connections = usernames_to_connections
         self.connections = {}
 
     def insert_entry(self, entry: ConnectionTableEntry):
@@ -41,14 +42,22 @@ class ConnectionTable:
         self.connections[representation] = entry
 
     def remove_entry(self, connection_information: ConnectionInformation):
-        """Removes the entry with specified ConnectionInformation from the table if present and otherwise fails silently"""
+        """Removes the entry with specified ConnectionInformation from the table if present and otherwise fails silently. This does not work with usernames for convenience."""
         representation = connection_information.text_representation
         if representation in self.connections:
             self.connections.pop(connection_information.text_representation)
 
+    def get_connection_information_from_username(self, username: str):
+        return self.usernames_to_connections.get(username, None)
+
     def get_entry(self, connection_information: ConnectionInformation):
-        """Returns the ConnectionTableEntry corresponding to the ConnectionInformation"""
-        return self.connections.get(connection_information.text_representation, None)
+        """Returns the ConnectionTableEntry corresponding to the ConnectionInformation. If a username is used instead of connection information, it is used to get the relevant connection information."""
+        if type(connection_information) == str:
+            connection_information = self.get_connection_information_from_username(connection_information)
+        if connection_information is None:
+            return None
+        else:
+            return self.connections.get(connection_information.text_representation, None)
 
     def get_entry_state(self, connection_information: ConnectionInformation):
         """Returns the state information associated with the ConnectionInformation"""
