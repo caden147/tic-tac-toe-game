@@ -79,12 +79,16 @@ class Server:
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_game_quit, protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_game_move, protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE)
 
-    def _send_message_to_opponent(self, player_username: str, message: Message):
-        state = self.connection_table.get_entry_state(player_username)
+    def _compute_opponent_username(self, username: str):
+        state = self.connection_table.get_entry_state(username)
         if state is not None and state.current_game is not None:
-            other_player_username = state.current_game.compute_other_player(player_username)
-            if other_player_username in self.usernames_to_connections:
-                self.connection_table.send_message_to_entry(message, other_player_username)
+            return state.current_game.compute_other_player(username)
+        return None
+
+    def _send_message_to_opponent(self, player_username: str, message: Message):
+        opponent_username = self._compute_opponent_username(player_username)
+        if opponent_username is not None:
+            self.connection_table.send_message_to_entry(message, opponent_username)
 
     def _send_text_message(self, text, connection_information):
         message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, text)
