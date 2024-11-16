@@ -90,6 +90,9 @@ class Server:
         if opponent_username is not None:
             self.connection_table.send_message_to_entry(message, opponent_username)
 
+    def _send_text_message_to_opponent(self, text, player_username: str):
+        self._send_message_to_opponent(player_username, Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, text))
+
     def _send_text_message(self, text, connection_information):
         message = Message(protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE, text)
         self.connection_table.send_message_to_entry(message, connection_information)
@@ -138,6 +141,7 @@ class Server:
         else:
             text = "The game could not be created."
         self._send_text_message(text, connection_information)
+        self._send_text_message(f"{creator_username} invited you to a game!", invited_user_username)
 
     def handle_game_join(self, values, connection_information):
         joiner_state = self.connection_table.get_entry_state(connection_information)
@@ -154,18 +158,13 @@ class Server:
             game_text = game.compute_text()
             game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
             self.connection_table.send_message_to_entry(game_message, connection_information)
-            if other_player_username in self.usernames_to_connections:
-                other_player_connection_information = self.usernames_to_connections[other_player_username]
-                self._send_text_message(f"{joiner_username} has joined your game!", other_player_connection_information)
+            self._send_text_message(f"{joiner_username} has joined your game!", other_player_username)
 
     def handle_game_quit(self, values, connection_information):
         state = self.connection_table.get_entry_state(connection_information)
         game = state.current_game
         if game is not None:
-            other_player_username = game.compute_other_player(state.username)
-            if other_player_username in self.usernames_to_connections:
-                other_player_connection_information = self.usernames_to_connections[other_player_username]
-                self._send_text_message(f"{state.username} has left your game!", other_player_connection_information)
+            self._send_text_message_to_opponent(f"{state.username} has left your game!", state.username)
         else:
             self._send_text_message(f"You are not in a game, so you cannot quit one.", connection_information)
 
