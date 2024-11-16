@@ -127,6 +127,7 @@ class OutputLengthWaitingCommand(WaitingCommand):
         self.length = length
 
     def condition_function(self, client: TestClientHandler):
+        print('client.get_output()', client.get_output())
         return len(client.get_output()) >= self.length
 
 class ReceivedMessagesLengthWaitingCommand(WaitingCommand):

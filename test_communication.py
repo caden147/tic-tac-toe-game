@@ -44,14 +44,16 @@ class TestMocking(unittest.TestCase):
         testcase = TestCase(should_perform_automatic_login=True)
         testcase.create_client("Bob")
         testcase.create_client("Alice")
-        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice", ReceivedMessagesLengthWaitingCommand(4), 'quit'])
-        testcase.buffer_client_commands("Alice", [ReceivedMessagesLengthWaitingCommand(4)])
+        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice", ReceivedMessagesLengthWaitingCommand(4), 'quit', ReceivedMessagesLengthWaitingCommand(5)])
+        testcase.buffer_client_commands("Alice", [ReceivedMessagesLengthWaitingCommand(4), 'join Bob', ReceivedMessagesLengthWaitingCommand(6)])
         testcase.run()
         expected_alice_messages = [
             SkipItem(),
             create_text_message("Bob invited you to a game!"),
             create_text_message("Bob has joined your game!"),
-            create_text_message("Bob has left your game!")
+            create_text_message("Bob has left your game!"),
+            PLAYING_O_MESSAGE,
+            EMPTY_GAME_BOARD_MESSAGE,
         ]
         testcase.assert_received_values_match_log(expected_alice_messages, "Alice")
 
