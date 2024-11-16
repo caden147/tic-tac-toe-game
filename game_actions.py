@@ -3,7 +3,7 @@ def is_valid_move_text(text: str):
 
 def convert_move_text_to_move_number(text: str):
     letter = text[0].lower()
-    number = int(text[1]) - 1
+    number = int(text[1])
     if letter == 'b':
         number += 3
     elif letter == 'c':
