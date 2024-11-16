@@ -8,7 +8,7 @@ class Message:
     def __init__(self, type_code, values):
         self.type_code = type_code
         self.values = values
-        if type(self.values) not in [tuple, list]:
+        if type(self.values) not in [tuple, list, dict]:
             self.values = (self.values,)
 
     def __str__(self):
