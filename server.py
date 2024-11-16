@@ -60,8 +60,8 @@ class Server:
         self.logger = logger
         self.database_path = database_path
         self.create_socket_from_address = listening_socket_creation_function
-        self.connection_table = ConnectionTable()
         self.usernames_to_connections = {}
+        self.connection_table = ConnectionTable(self.usernames_to_connections)
         self.game_handler = GameHandler()
         listening_socket = self.create_socket_from_address((host, port))
         self.selector.register(listening_socket, selectors.EVENT_READ, data=None)
