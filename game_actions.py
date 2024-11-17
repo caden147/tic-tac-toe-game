@@ -19,3 +19,6 @@ def compute_current_player(game_state: str) -> str:
     x_moves = game_state.count('X')
     o_moves = game_state.count('O')
     return 'X' if x_moves == o_moves else 'O'
+
+def compute_other_piece(piece: str):
+    return 'X' if piece == 'O' else 'O'
