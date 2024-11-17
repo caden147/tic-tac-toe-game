@@ -280,6 +280,7 @@ class TestCase:
         credentials = client.get_credentials()
         insert_account_into_database_at_path_if_nonexistent(Account(credentials.username, credentials.password), self.database_path)
         client.login()
+        ReceivedMessagesLengthWaitingCommand(1).condition_function(client)
 
     def create_client(self, user_name, password=""):
         def actually_create_client(password):
