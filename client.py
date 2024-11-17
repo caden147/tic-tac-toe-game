@@ -209,6 +209,10 @@ class Client:
                 if current_piece == self.current_piece:
                     type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
                     values = (move_number,)
+                else:
+                    self.output_text("Client: Not your turn.")
+                    type_code = protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE
+                    values = ("Client: Not your turn.",)
 
         if type_code is not None:
             request = protocol.Message(type_code, values)
@@ -263,7 +267,9 @@ def perform_user_commands_through_connection(client: Client):
             done = True
         else:
             request = client.create_request_from_text_input(user_input)
-            if request is None:
+            if request.type_code == protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE and request.values[0] == "not your turn":
+                continue
+            elif request is None:
                 print('Command not recognized.')
             else:
                 client.send_message(request)

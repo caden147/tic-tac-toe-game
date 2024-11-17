@@ -188,7 +188,7 @@ class Server:
                     if other_player_game_state.current_game is not None and other_player_game_state.current_game.compute_other_player(other_player_username) == state.username:
                         self.connection_table.send_message_to_entry(game_message, other_player_connection_information)
             else:
-                self._send_text_message("Invalid move.", connection_information)
+                self._send_text_message("This tile is already taken.", connection_information)
 
 
     def cleanup_connection(self, connection_information):
