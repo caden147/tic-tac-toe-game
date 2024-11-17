@@ -169,9 +169,11 @@ class Server:
         else:
             self._send_text_message(f"You are not in a game, so you cannot quit one.", connection_information)
 
-    def _message_clients_about_game_ending(self, player_username, opponent_username, victory_condition):
-        self.connection_table.send_message_to_entry(Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (opponent_username, victory_condition)))
-        self._send_message_to_opponent(player_username, Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (player_username, victory_condition)))
+    def _message_clients_about_game_ending(self, player_username, opponent_username, victory_condition, game: Game):
+        player_outcome = game.compute_player_outcome(victory_condition, player_username)
+        self.connection_table.send_message_to_entry(Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (opponent_username, player_outcome)))
+        opponent_outcome = game.compute_player_outcome(victory_condition, opponent_username)
+        self._send_message_to_opponent(player_username, Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (player_username, opponent_outcome)))
 
     def handle_game_move(self, values, connection_information):
         state = self.connection_table.get_entry_state(connection_information)
@@ -188,7 +190,7 @@ class Server:
                 victory_condition = game.check_winner()
                 self.connection_table.send_message_to_entry(game_message, connection_information)
                 if victory_condition is not None:
-                    self._message_clients_about_game_ending(state.username, other_player_username, victory_condition)
+                    self._message_clients_about_game_ending(state.username, other_player_username, victory_condition, game)
                 if other_player_username in self.usernames_to_connections:
                     other_player_connection_information = self.usernames_to_connections[other_player_username]
                     other_player_game_state = self.connection_table.get_entry_state(other_player_connection_information)

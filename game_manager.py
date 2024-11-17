@@ -1,4 +1,7 @@
+import game_actions
+
 class Game:
+    TIE_CONDITION = "T"
     def __init__(self, creator_username, invited_username):
         self.creator_username = creator_username
         self.invited_username = invited_username
@@ -12,6 +15,14 @@ class Game:
     def compute_player_piece(self, username: str):
         """Compute the game piece for the specified player"""
         return 'X' if username == self.creator_username else 'O'
+
+    def compute_player_outcome(self, victory_condition: str, username: str):
+        if victory_condition == self.compute_player_piece(username):
+            return game_actions.VICTORY
+        elif victory_condition == self.TIE_CONDITION:
+            return game_actions.TIE
+        else:
+            return game_actions.LOSS
 
     def make_move(self, username, move):
         if username != self.current_turn:
@@ -35,7 +46,7 @@ class Game:
             if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != ' ':
                 return self.board[combo[0]]
         if ' ' not in self.board:
-            return 'T'
+            return self.TIE_CONDITION
         return None
 
     def is_over(self):
