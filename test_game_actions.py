@@ -50,6 +50,14 @@ class EndingTestCase(unittest.TestCase):
         board = ' OX OX  X'
         self._assert_victory(board)
 
+    def test_top_left_to_bottom_right_diagonal(self):
+        board = 'XOO X   X'
+        self._assert_victory(board)
+
+    def test_bottom_left_to_top_right_diagonal(self):
+        board = 'OOX X X  '
+        self._assert_victory(board)
+
     
 
 if __name__ == '__main__':
