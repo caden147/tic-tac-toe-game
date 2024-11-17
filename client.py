@@ -72,7 +72,7 @@ class Client:
         self.output_text(f"Your game with {opponent_username} ended with a {outcome_text}!")
         if opponent_username == self.current_opponent:
             self._reset_game_state()
-            self.output_text("You may start another game with the 'create' command and may quit this game using the 'quit' command.")
+            self.output_text("You have quit the game.\nYou may start another game with the 'create' command and may quit the program using the 'exit' command.")
 
     def update_game(self, values):
         """Updates the game state"""
@@ -147,7 +147,6 @@ class Client:
             self.protocol_callback_handler,
         )
         self.selector.register(sock, events, data=self.connection_handler)
-        self.splash()
 
     def splash(self):
         """prints splash screen and game instructions"""
@@ -162,8 +161,9 @@ class Client:
               "        |_|  \_\_/ |_|__\n")
         print("Welcome to VCD's Tic-Tac-Toe game!")
         print("To play, you will need to create an account and login.\n" +
-              "Then, choose an opponent, create a game, and join the game.\n")
-        print("For help with commands, type 'help'.")
+              "Then, create a game or join someone else's.\n" + 
+              "If you create a game, you must join it as well to start playing.\n\n" +
+              "For help with commands, type 'help'.")
         
     def send_message(self, message: protocol.Message):
         """Sends the message to the server"""
@@ -329,6 +329,7 @@ def main():
     host, port = arguments.i, arguments.p
 
     connection = Client(host, port, sel, client_logger)
+    connection.splash()
     #Run the client input loop in a separate thread
     client_input_thread = Thread(target=perform_user_commands_through_connection, args=(connection,))
     client_input_thread.start()
