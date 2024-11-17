@@ -13,7 +13,7 @@ from protocol import Message
 import protocol_definitions
 import logging_utilities
 import connection_handler
-from game_manager import GameHandler
+from game_manager import GameHandler, Game
 from connection_table import ConnectionTable, ConnectionTableEntry
 from database_management import Account, create_database_at_path, retrieve_account_with_name_from_database_at_path, insert_account_into_database_at_path
 import sqlite3 #Imported for database exceptions only
@@ -169,9 +169,15 @@ class Server:
         else:
             self._send_text_message(f"You are not in a game, so you cannot quit one.", connection_information)
 
+    def _message_clients_about_game_ending(self, player_username, opponent_username, victory_condition, game: Game):
+        player_outcome = game.compute_player_outcome(victory_condition, player_username)
+        self.connection_table.send_message_to_entry(Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (opponent_username, player_outcome)), player_username)
+        opponent_outcome = game.compute_player_outcome(victory_condition, opponent_username)
+        self._send_message_to_opponent(player_username, Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (player_username, opponent_outcome)))
+
     def handle_game_move(self, values, connection_information):
         state = self.connection_table.get_entry_state(connection_information)
-        game = state.current_game
+        game: Game = state.current_game
         if game is None:
             self._send_text_message("You are not in a game, so you cannot make moves.", connection_information)
         elif game.get_current_turn() != state.username:
@@ -180,13 +186,16 @@ class Server:
             if game.make_move(state.username, values["number"]):
                 game_text = game.compute_text()
                 game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
-                self.connection_table.send_message_to_entry(game_message, connection_information)
                 other_player_username = game.compute_other_player(state.username)
+                self.connection_table.send_message_to_entry(game_message, connection_information)
                 if other_player_username in self.usernames_to_connections:
                     other_player_connection_information = self.usernames_to_connections[other_player_username]
                     other_player_game_state = self.connection_table.get_entry_state(other_player_connection_information)
                     if other_player_game_state.current_game is not None and other_player_game_state.current_game.compute_other_player(other_player_username) == state.username:
                         self.connection_table.send_message_to_entry(game_message, other_player_connection_information)
+                victory_condition = game.check_winner()
+                if victory_condition is not None:
+                    self._message_clients_about_game_ending(state.username, other_player_username, victory_condition, game)
             else:
                 self._send_text_message("This tile is already taken.", connection_information)
 

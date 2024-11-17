@@ -105,4 +105,6 @@ def create_fixed_length_string_protocol_field(name, size):
         size_text = "s"
     field = ConstantLengthProtocolField(name, size_text, size)
     return field
-    
+
+def create_single_character_string_protocol_field(name):
+    return create_fixed_length_string_protocol_field('character', 1)

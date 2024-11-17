@@ -12,6 +12,7 @@ QUIT_GAME_PROTOCOL_TYPE_CODE = 7
 CHAT_MESSAGE_PROTOCOL_TYPE_CODE = 8
 GAME_CREATION_PROTOCOL_TYPE_CODE = 9
 GAME_PIECE_PROTOCOL_TYPE_CODE = 10
+GAME_ENDING_PROTOCOL_TYPE_CODE = 11
 
 #For communicating with the client
 CLIENT_PROTOCOL_MAP = protocol.ProtocolMap([
@@ -20,6 +21,7 @@ CLIENT_PROTOCOL_MAP = protocol.ProtocolMap([
     protocol.create_text_message_protocol(TEXT_MESSAGE_PROTOCOL_TYPE_CODE),
     protocol.create_nine_character_single_string_message_protocol(GAME_UPDATE_PROTOCOL_TYPE_CODE),
     protocol.create_single_character_string_message_protocol(GAME_PIECE_PROTOCOL_TYPE_CODE),
+    protocol.create_username_and_single_character_message_protocol(GAME_ENDING_PROTOCOL_TYPE_CODE)
 ])
 
 #For communicating with the server

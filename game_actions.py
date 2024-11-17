@@ -1,3 +1,7 @@
+VICTORY = "W"
+LOSS = "L"
+TIE = "T"
+
 def is_valid_move_text(text: str):
     return len(text) == 2 and text[0].lower() in 'abc' and text[1] in '123'
 
