@@ -70,7 +70,6 @@ class MessageSender:
         """Starts transmitting the message with specified type code and values to the connection peer"""
         message_bytes = self.protocol_map.pack_values_given_type_code(message.type_code, *message.values)
         self.buffer += message_bytes
-        self.write()
         self.logger.handle_debug_message(MessageEvent(message, self.addr), SENDING_MESSAGE_LOG_CATEGORY)
 
 class MessageReceiver:

@@ -280,6 +280,7 @@ class TestCase:
         credentials = client.get_credentials()
         insert_account_into_database_at_path_if_nonexistent(Account(credentials.username, credentials.password), self.database_path)
         client.login()
+        ReceivedMessagesLengthWaitingCommand(1)(client)
 
     def create_client(self, user_name, password=""):
         def actually_create_client(password):
@@ -295,6 +296,8 @@ class TestCase:
 
     def buffer_client_command(self, user_name, command):
         client = self.clients[user_name]
+        if type(command) == int:
+            command = ReceivedMessagesLengthWaitingCommand(command)
         client.buffer_command(command)
         
     def buffer_client_commands(self, user_name, commands):

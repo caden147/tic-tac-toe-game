@@ -20,7 +20,7 @@ class TestMocking(unittest.TestCase):
         testcase = TestCase()
         testcase.create_client("Bob")
         testcase.buffer_client_command("Bob", "help")
-        testcase.buffer_client_command("Bob", ReceivedMessagesLengthWaitingCommand(1))
+        testcase.buffer_client_command("Bob", 1)
         testcase.run()
         output = testcase.get_output("Bob")
         print('output', output)
@@ -36,7 +36,7 @@ class TestMocking(unittest.TestCase):
         ]
         testcase = TestCase(should_perform_automatic_login=True)
         testcase.create_client("Bob")
-        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice"])
+        testcase.buffer_client_commands("Bob", ["create Alice", 2, "join Alice"])
         testcase.run()
         testcase.assert_received_values_match_log(expected_messages, 'Bob')
         
@@ -44,8 +44,8 @@ class TestMocking(unittest.TestCase):
         testcase = TestCase(should_perform_automatic_login=True)
         testcase.create_client("Bob")
         testcase.create_client("Alice")
-        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice", ReceivedMessagesLengthWaitingCommand(4), 'quit', ReceivedMessagesLengthWaitingCommand(5)])
-        testcase.buffer_client_commands("Alice", [ReceivedMessagesLengthWaitingCommand(4), 'join Bob', ReceivedMessagesLengthWaitingCommand(6)])
+        testcase.buffer_client_commands("Bob", ["create Alice", 2, "join Alice", 4, 'quit', 5])
+        testcase.buffer_client_commands("Alice", [4, 'join Bob', 6])
         testcase.run()
         expected_alice_messages = [
             SkipItem(),
@@ -61,8 +61,8 @@ class TestMocking(unittest.TestCase):
         testcase = TestCase(should_perform_automatic_login=True)
         testcase.create_client("Bob")
         testcase.create_client("Alice")
-        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(4)])
-        testcase.buffer_client_commands("Alice", [ReceivedMessagesLengthWaitingCommand(2), 'join Bob', ReceivedMessagesLengthWaitingCommand(4), 'quit'])
+        testcase.buffer_client_commands("Bob", ["create Alice", 4])
+        testcase.buffer_client_commands("Alice", [2, 'join Bob', 4, 'quit'])
         expected_alice_messages = [
             SkipItem(),
             create_text_message("Bob invited you to a game!"),
