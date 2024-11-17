@@ -248,9 +248,10 @@ class Client:
                 if current_piece == self.current_piece:
                     type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
                     values = (move_number,)
+                elif self.current_game[move_number - 1] == ' ':
+                    self.output_text("You cannot move there because that spot is already taken.")
                 else:
                     self.output_text("You cannot move because it is not your turn.")
-                    type_code = protocol_definitions.LOCAL_OUTPUT_TYPE_CODE
         if type_code is not None:
             request = protocol.Message(type_code, values)
         return request
