@@ -35,7 +35,7 @@ class Game:
             if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != ' ':
                 return self.board[combo[0]]
         if ' ' not in self.board:
-            return 'Tie'
+            return 'T'
         return None
 
     def is_over(self):

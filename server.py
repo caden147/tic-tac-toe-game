@@ -13,7 +13,7 @@ from protocol import Message
 import protocol_definitions
 import logging_utilities
 import connection_handler
-from game_manager import GameHandler
+from game_manager import GameHandler, Game
 from connection_table import ConnectionTable, ConnectionTableEntry
 from database_management import Account, create_database_at_path, retrieve_account_with_name_from_database_at_path, insert_account_into_database_at_path
 import sqlite3 #Imported for database exceptions only
@@ -171,7 +171,7 @@ class Server:
 
     def handle_game_move(self, values, connection_information):
         state = self.connection_table.get_entry_state(connection_information)
-        game = state.current_game
+        game: Game = state.current_game
         if game is None:
             self._send_text_message("You are not in a game, so you cannot make moves.", connection_information)
         elif game.get_current_turn() != state.username:
@@ -180,7 +180,10 @@ class Server:
             if game.make_move(state.username, values["number"]):
                 game_text = game.compute_text()
                 game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
+                victory_condition = game.check_winner()
                 self.connection_table.send_message_to_entry(game_message, connection_information)
+                if victory_condition is not None:
+                    pass
                 other_player_username = game.compute_other_player(state.username)
                 if other_player_username in self.usernames_to_connections:
                     other_player_connection_information = self.usernames_to_connections[other_player_username]
