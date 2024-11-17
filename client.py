@@ -72,7 +72,7 @@ class Client:
         self.output_text(f"Your game with {opponent_username} ended with a {outcome_text}!")
         if opponent_username == self.current_opponent:
             self._reset_game_state()
-            self.output_text("You have quit the game.\nYou may start another game with the 'create' command and may quit the program using the 'exit' command.")
+            self.output_text("This game has ended.\nYou may start another game with the 'create' command and may quit the program using the 'exit' command.")
 
     def update_game(self, values):
         """Updates the game state"""
