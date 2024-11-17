@@ -171,7 +171,7 @@ class Server:
 
     def _message_clients_about_game_ending(self, player_username, opponent_username, victory_condition, game: Game):
         player_outcome = game.compute_player_outcome(victory_condition, player_username)
-        self.connection_table.send_message_to_entry(Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (opponent_username, player_outcome)))
+        self.connection_table.send_message_to_entry(Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (opponent_username, player_outcome)), player_username)
         opponent_outcome = game.compute_player_outcome(victory_condition, opponent_username)
         self._send_message_to_opponent(player_username, Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (player_username, opponent_outcome)))
 

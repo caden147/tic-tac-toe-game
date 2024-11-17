@@ -318,5 +318,5 @@ def create_username_and_single_character_message_protocol(type_code: int):
         Returns a message protocol for communicating a username followed by a single character
     """
     username_field = create_string_protocol_field('opponent', 1)
-    single_character_field = create_single_character_string_protocol_field()
+    single_character_field = create_single_character_string_protocol_field("character")
     return create_protocol(type_code, [username_field, single_character_field])
