@@ -16,6 +16,7 @@ import protocol_definitions
 import protocol
 import game_actions
 
+CLIENT_COMMANDS = set(['quit', 'join', 'create', 'move', 'exit', 'login', 'register', 'help'])
 
 def create_socket_from_address(target_address):
     """Creates a client socket that connects to the specified address"""
@@ -186,7 +187,10 @@ class Client:
         self.current_opponent = None
 
     def create_request(self, action, value):
-        """Creates a request for the server from an action value pair"""
+        """Creates a request for the server from an action value pair. Returns None on failure."""
+        if action not in CLIENT_COMMANDS:
+            self.output_text('Command not recognized.')
+            return 
         type_code = None
         values = None
         request = None
@@ -199,38 +203,55 @@ class Client:
                 values = []
         elif action == "login":
             values = _parse_two_space_separated_values(value)
-            if values is not None:
+            if values is None:
+                self.output_text('When logging in, you must provide a username, press space, and provide your password!')
+            elif self.current_game is not None:
+                self.output_text("You cannot log in to an account in the middle of a game!")
+            else:
                 type_code = protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE
         elif action == "register":
             values = _parse_two_space_separated_values(value)
-            if values is not None:
+            if values is None:
+                self.output_text('When creating an account, you must provide a username, press space, and provide your password!')
+            elif self.current_game is not None:
+                self.output_text("You cannot register an account in the middle of a game!")
+            else:
                 type_code = protocol_definitions.ACCOUNT_CREATION_PROTOCOL_TYPE_CODE
         elif action == "quit":
-            if self.current_game is not None:
+            if self.current_game is None:
+                self.output_text("You cannot quit a game when you are not in one.")
+            else:
                 type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
                 values = []
                 self._reset_game_state()
         elif action == "join":
-            if value != "" and self.current_game is None:
+            if value == "":
+                self.output_text("To join a game, you must specify the username of your opponent.")
+            else:
                 type_code = protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE
                 values = (value,)
                 self.current_opponent = value
-        elif action == "create" and self.current_game is None:
-            if value != "":
+        elif action == "create":
+            if value == "":
+                self.output_text("To create a game, you must specify the username of your opponent.")
+            else:
                 type_code = protocol_definitions.GAME_CREATION_PROTOCOL_TYPE_CODE
                 values = (value,)
         elif action == "move":
-            if self.current_game and game_actions.is_valid_move_text(value):
+            if not self.current_game:
+                self.output_text("You cannot make a move because you are not in a game.")
+            elif not game_actions.is_valid_move_text(value):
+                self.output_text("You must provide a valid move. Use the row followed by the column, such as 'move a1'.")
+            else:
                 move_number = game_actions.convert_move_text_to_move_number(value)
                 current_piece = game_actions.compute_current_player(self.current_game)
                 if current_piece == self.current_piece:
                     type_code = protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE
                     values = (move_number,)
+                elif self.current_game[move_number - 1] == ' ':
+                    self.output_text("You cannot move there because that spot is already taken.")
                 else:
-                    self.output_text("Client: Not your turn.")
-                    type_code = protocol_definitions.LOCAL_OUTPUT_TYPE_CODE
-                    values = ("Client: Not your turn.",)
-
+                    self.output_text("You cannot move because it is not your turn.")
         if type_code is not None:
             request = protocol.Message(type_code, values)
         return request
@@ -284,11 +305,7 @@ def perform_user_commands_through_connection(client: Client):
             done = True
         else:
             request = client.create_request_from_text_input(user_input)
-            if request.type_code == protocol_definitions.LOCAL_OUTPUT_TYPE_CODE and request.values[0] == "Client: Not your turn.":
-                continue
-            elif request is None:
-                print('Command not recognized.')
-            else:
+            if request:
                 client.send_message(request)
     client.close()
 
