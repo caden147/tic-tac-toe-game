@@ -180,11 +180,12 @@ class Server:
             if game.make_move(state.username, values["number"]):
                 game_text = game.compute_text()
                 game_message = Message(protocol_definitions.GAME_UPDATE_PROTOCOL_TYPE_CODE, (game_text,))
+                other_player_username = game.compute_other_player(state.username)
                 victory_condition = game.check_winner()
                 self.connection_table.send_message_to_entry(game_message, connection_information)
                 if victory_condition is not None:
-                    pass
-                other_player_username = game.compute_other_player(state.username)
+                    self.connection_table.send_message_to_entry(Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (other_player_username, victory_condition)))
+                    self._send_message_to_opponent(state.username, Message(protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE, (state.username, victory_condition)))
                 if other_player_username in self.usernames_to_connections:
                     other_player_connection_information = self.usernames_to_connections[other_player_username]
                     other_player_game_state = self.connection_table.get_entry_state(other_player_connection_information)
