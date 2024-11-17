@@ -211,7 +211,7 @@ class Client:
                     values = (move_number,)
                 else:
                     self.output_text("Client: Not your turn.")
-                    type_code = protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE
+                    type_code = protocol_definitions.LOCAL_OUTPUT_TYPE_CODE
                     values = ("Client: Not your turn.",)
 
         if type_code is not None:
@@ -267,7 +267,7 @@ def perform_user_commands_through_connection(client: Client):
             done = True
         else:
             request = client.create_request_from_text_input(user_input)
-            if request.type_code == protocol_definitions.TEXT_MESSAGE_PROTOCOL_TYPE_CODE and request.values[0] == "not your turn":
+            if request.type_code == protocol_definitions.LOCAL_OUTPUT_TYPE_CODE and request.values[0] == "Client: Not your turn.":
                 continue
             elif request is None:
                 print('Command not recognized.')
