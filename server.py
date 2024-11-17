@@ -137,12 +137,14 @@ class Server:
         creator_state = self.connection_table.get_entry_state(connection_information)
         creator_username = creator_state.username
         invited_user_username = values["username"]
-        if self.game_handler.create_game(creator_username, invited_user_username):
+        is_game_created = self.game_handler.create_game(creator_username, invited_user_username)
+        if is_game_created:
             text = "The game was created!"
         else:
             text = "The game could not be created."
         self._send_text_message(text, connection_information)
-        self._send_text_message(f"{creator_username} invited you to a game!", invited_user_username)
+        if is_game_created:
+            self._send_text_message(f"{creator_username} invited you to a game!", invited_user_username)
 
     def handle_game_join(self, values, connection_information):
         joiner_state = self.connection_table.get_entry_state(connection_information)

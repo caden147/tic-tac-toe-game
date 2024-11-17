@@ -36,7 +36,7 @@ class TestMocking(unittest.TestCase):
         ]
         testcase = TestCase(should_perform_automatic_login=True)
         testcase.create_client("Bob")
-        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice"])
+        testcase.buffer_client_commands("Bob", ["create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice"])
         testcase.run()
         testcase.assert_received_values_match_log(expected_messages, 'Bob')
         
@@ -44,7 +44,7 @@ class TestMocking(unittest.TestCase):
         testcase = TestCase(should_perform_automatic_login=True)
         testcase.create_client("Bob")
         testcase.create_client("Alice")
-        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice", ReceivedMessagesLengthWaitingCommand(4), 'quit', ReceivedMessagesLengthWaitingCommand(5)])
+        testcase.buffer_client_commands("Bob", ["create Alice", ReceivedMessagesLengthWaitingCommand(2), "join Alice", ReceivedMessagesLengthWaitingCommand(4), 'quit', ReceivedMessagesLengthWaitingCommand(5)])
         testcase.buffer_client_commands("Alice", [ReceivedMessagesLengthWaitingCommand(4), 'join Bob', ReceivedMessagesLengthWaitingCommand(6)])
         testcase.run()
         expected_alice_messages = [
@@ -61,7 +61,7 @@ class TestMocking(unittest.TestCase):
         testcase = TestCase(should_perform_automatic_login=True)
         testcase.create_client("Bob")
         testcase.create_client("Alice")
-        testcase.buffer_client_commands("Bob", [ReceivedMessagesLengthWaitingCommand(1), "create Alice", ReceivedMessagesLengthWaitingCommand(4)])
+        testcase.buffer_client_commands("Bob", ["create Alice", ReceivedMessagesLengthWaitingCommand(4)])
         testcase.buffer_client_commands("Alice", [ReceivedMessagesLengthWaitingCommand(2), 'join Bob', ReceivedMessagesLengthWaitingCommand(4), 'quit'])
         expected_alice_messages = [
             SkipItem(),
