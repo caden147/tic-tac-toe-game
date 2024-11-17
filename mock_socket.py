@@ -100,6 +100,9 @@ class MockTCPSocket:
     def is_listening_socket(self):
         return False
 
+    def is_open_for_writing(self):
+        return self.open_for_writing
+
 
 class MockListeningSocket:
     def __init__(self, internet: MockInternet, address):
@@ -109,7 +112,15 @@ class MockListeningSocket:
         self.internet.register_socket(self.address, self)
         self.last_port_used = self.address[1]
         self.is_listening = False
+        self.is_open_for_reading = False
+        self.open_for_writing = False
         self.created_sockets = []
+
+    def set_open_for_reading(self, value):
+        self.is_open_for_reading = value
+
+    def set_open_for_writing(self, value):
+        self.open_for_writing = value
 
     def setsockopt(self, *args):
         pass
@@ -124,7 +135,7 @@ class MockListeningSocket:
         pass
 
     def create_response_socket(self, address):
-        if self.is_listening:
+        if self.is_listening and self.is_open_for_reading:
             self.last_port_used += 1
             host = self.address[0]
             new_socket = MockTCPSocket(self.internet, (host, self.last_port_used))
@@ -142,6 +153,9 @@ class MockListeningSocket:
 
     def is_listening_socket(self):
         return False
+
+    def is_open_for_writing(self):
+        return self.open_for_writing
 
 class MockKey:
     def __init__(self, data, socket):
@@ -167,12 +181,13 @@ class MockSelector:
             if socket.has_received_bytes():
                 result_key = MockKey(None, None, socket) if socket.is_listening_socket() else key
                 results.append((result_key, selectors.EVENT_READ))
+            if socket.is_open_for_writing():
+                results.append((key, selectors.EVENT_WRITE))
         return results
 
     def register(self, socket, flags, data: connection_handler.ConnectionHandler):
         key = MockKey(data, socket)
-        if data is not None:
-            data._set_selector_events_mask(flags)
+        self.modify(socket, flags, data)
         self.sockets[key] = data
 
     def apply_operation_on_key_corresponding_to_socket(self, socket, operation):
@@ -184,7 +199,7 @@ class MockSelector:
         self.apply_operation_on_key_corresponding_to_socket(self.sockets.pop, socket)
 
     def modify(self, socket, mode, data):
-        is_mode_matching_both = mode == selectors.EVENT_READ & selectors.EVENT_READ
+        is_mode_matching_both = mode == selectors.EVENT_READ | selectors.EVENT_WRITE
         socket.set_open_for_reading(mode == selectors.EVENT_READ or is_mode_matching_both)
         socket.set_open_for_writing(mode == selectors.EVENT_WRITE or is_mode_matching_both)
 
