@@ -107,7 +107,8 @@ class Client:
         srow_1 = "".join(gamerow_1)
         srow_2 = "".join(gamerow_2)
         srow_3 = "".join(gamerow_3)
-        self.information_text = f"{self.username} ({self.current_piece} vs {self.current_opponent} ({game_actions.compute_other_piece(self.current_piece)})\n{game_actions.compute_current_player(self.current_game)}'s turn."
+        self.information_text = f"{self.username} ({self.current_piece}) vs {self.current_opponent} ({game_actions.compute_other_piece(self.current_piece)})\n{game_actions.compute_current_player(self.current_game)}'s turn."
+        self.output_text(self.information_text)
         self.output_text(srow_1 + "\n___|___|___ a\n" +
                          srow_2 + "\n___|___|___ b\n" +
                          srow_3 + "\n   |   |    c\n 1   2   3\n")
