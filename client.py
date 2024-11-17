@@ -61,6 +61,16 @@ class Client:
         self.is_closed = False
         self.has_received_successful_message = False
 
+    def handle_game_ending(self, values):
+        opponent_username = values["opponent"]
+        outcome = values['character']
+        outcome_text = "tie"
+        if outcome_text == game_actions.LOSS:
+            outcome = "loss"
+        elif outcome_text == game_actions.VICTORY:
+            outcome = "win"
+        self.output_text(f"Your game with {opponent_username} ended with a {outcome}!")
+
     def update_game(self, values):
         """Updates the game state"""
         self.output_text("The game board is now:")
@@ -118,6 +128,7 @@ class Client:
         self.protocol_callback_handler.register_callback_with_protocol(self.update_game_piece, protocol_definitions.GAME_PIECE_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_help_message, protocol_definitions.HELP_MESSAGE_PROTOCOL_TYPE_CODE)
         self.protocol_callback_handler.register_callback_with_protocol(self.handle_help_message, protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE)
+        self.protocol_callback_handler.register_callback_with_protocol(self.handle_game_ending, protocol_definitions.GAME_ENDING_PROTOCOL_TYPE_CODE)
 
     def _create_connection_handler(self):
         """Creates the connection handler for managing the connection with the server"""
