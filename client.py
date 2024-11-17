@@ -64,12 +64,12 @@ class Client:
     def handle_game_ending(self, values):
         opponent_username = values["opponent"]
         outcome = values['character']
-        outcome_text = "tie"
-        if outcome_text == game_actions.LOSS:
-            outcome = "loss"
-        elif outcome_text == game_actions.VICTORY:
-            outcome = "win"
-        self.output_text(f"Your game with {opponent_username} ended with a {outcome}!")
+        outcome_text = 'tie'
+        if outcome == game_actions.LOSS:
+            outcome_text = 'loss'
+        elif outcome == game_actions.VICTORY:
+            outcome_text = 'win'
+        self.output_text(f"Your game with {opponent_username} ended with a {outcome_text}!")
         if opponent_username == self.current_opponent:
             self._reset_game_state()
             self.output_text("The game has ended. \nYou may start another game with the create command and may exit using the exit command.")
