@@ -9,7 +9,6 @@ import traceback
 import os
 from threading import Thread
 import argparse
-from game_manager import GameHandler
 
 import connection_handler
 import logging_utilities
@@ -52,6 +51,7 @@ class Client:
         self.host = host
         self.port = port
         self.current_game = None
+        self.current_opponent = None
         self.output_text = output_text_function
         self.selector = selector
         self.logger = logger
@@ -70,6 +70,9 @@ class Client:
         elif outcome_text == game_actions.VICTORY:
             outcome = "win"
         self.output_text(f"Your game with {opponent_username} ended with a {outcome}!")
+        if opponent_username == self.current_opponent:
+            self._reset_game_state()
+            self.output_text("The game has ended. \nYou may start another game with the create command and may exit using the exit command.")
 
     def update_game(self, values):
         """Updates the game state"""
@@ -177,7 +180,10 @@ class Client:
                 done = False
                 self.pause_in_between_reconnection_attempts()
 
-
+    def _reset_game_state(self):
+        self.current_game = None
+        self.current_piece = None
+        self.current_opponent = None
 
     def create_request(self, action, value):
         """Creates a request for the server from an action value pair"""
@@ -203,12 +209,12 @@ class Client:
             if self.current_game is not None:
                 type_code = protocol_definitions.QUIT_GAME_PROTOCOL_TYPE_CODE
                 values = []
-                self.current_game = None
-                self.current_piece = None
+                self._reset_game_state()
         elif action == "join":
             if value != "" and self.current_game is None:
                 type_code = protocol_definitions.JOIN_GAME_PROTOCOL_TYPE_CODE
                 values = (value,)
+                self.current_opponent = value
         elif action == "create" and self.current_game is None:
             if value != "":
                 type_code = protocol_definitions.GAME_CREATION_PROTOCOL_TYPE_CODE
