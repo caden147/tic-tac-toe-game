@@ -296,6 +296,8 @@ class TestCase:
 
     def buffer_client_command(self, user_name, command):
         client = self.clients[user_name]
+        if type(command) == int:
+            command = ReceivedMessagesLengthWaitingCommand(command)
         client.buffer_command(command)
         
     def buffer_client_commands(self, user_name, commands):
