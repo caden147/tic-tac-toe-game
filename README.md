@@ -97,7 +97,7 @@ The test case is ran with the run method. The output obtained is the output to t
 
 The object SkipItem() can be used in one of the assertion lists to mean that whatever is in that position can be ignored.
 
-The following test uses should_perform_automatic_login=True to specify that clients should be automatically logged into the server. The corresponding identities are generated automatically if nonexistent. The clients wait for the login responses before performing any actions. The login response is skipped with a SkipItem() in the below test. Note that the total number of messages received for waiting must include the initial login response. 
+The following test uses should_perform_automatic_login=True to specify that clients should be automatically logged into the server. The corresponding identities are generated automatically if nonexistent. The clients wait for the login responses before performing any actions. The login response is skipped with a SkipItem() in the below test. Note that the total number of messages received for waiting must include the initial login response even with automatic login. 
 
 ```python
         testcase = TestCase(should_perform_automatic_login=True)
