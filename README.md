@@ -95,3 +95,25 @@ Sample test:
 The expected message is the message expected from the server to the client. A test case object is created for the test. A client named "Bob" is created inside this test case. It buffers the commands "help" and 1. This means that this will stimulate Bob running the help command and then wait until the total number of received messages at this simulated client is 1 before proceeding. This prevents the client from terminating before it has finished receiving messages. A number is used here to decide how many messages must be received before proceeding. A timeout throws an exception if this takes too long. This is useful for making the simulated client receive responses from prior messages or messages that result from other simulated clients before executing the following instructions.
 
 The test case is ran with the run method. The output obtained is the output to the client's simulated terminal. The first assertion statement asserts that the received messages are as expected. The second assertion asserts that that the simulated client terminal output consists of a single message containing the text "Help". 
+
+The object SkipItem() can be used in one of the assertion lists to mean that whatever is in that position can be ignored.
+
+The following test uses should_perform_automatic_login=True to specify that clients should be automatically logged into the server. The corresponding identities are generated automatically if nonexistent. The clients wait for the login responses before performing any actions. The login response is skipped with a SkipItem() in the below test. 
+
+```python
+        testcase = TestCase(should_perform_automatic_login=True)
+        testcase.create_client("Bob")
+        testcase.create_client("Alice")
+        testcase.buffer_client_commands("Bob", ["create Alice", 2, "join Alice", 4, 'quit', 5])
+        testcase.buffer_client_commands("Alice", [4, 'join Bob', 6])
+        testcase.run()
+        expected_alice_messages = [
+            SkipItem(),
+            create_text_message("Bob invited you to a game!"),
+            create_text_message("Bob has joined your game!"),
+            create_text_message("Bob has left your game!"),
+            PLAYING_O_MESSAGE,
+            EMPTY_GAME_BOARD_MESSAGE,
+        ]
+        testcase.assert_received_values_match_log(expected_alice_messages, "Alice")
+```
