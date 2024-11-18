@@ -37,7 +37,7 @@ Abstract protocols (used to define concrete message protocols):
 * Small text message protocol: Contains a type code, then a 1 byte field giving the length of the next field, and then a string field.
 * Game board message protocol: Contains a type code and then a fixed length 9 byte string representing a tictactoe game board. Each character represents a position on the board. 
 * Fixed length string message protocol: Contains a type code and then a fixed length string.
-* Single character message protocol: Contains a single character in a single byte. 
+* Single character message protocol: Contains a type code followed by single character in a single byte. 
 * Single username and single character message protocol: Contains a type code and then a variable length string with its length determined by a single byte field. The last field is a single byte character.
 
 Message Protocols for Communicating From the Client to the Server:
@@ -57,9 +57,9 @@ Message Protocols for Communicating From the Server to the Client:
 * Text message response: a text message protocol with type code 4 for giving miscellaneous updates to the client. 
 * Game update response: a game board message protocol with type code 5. This gives the board for the active game and is sent when a player joins a game or after a move is made.
 * Chat message response: a text message protocol with type code 9 sending a text message to the desired recipient. 
-* Game piece update message: a fixed length string message protocol transmitting a string of size 1 containing the game piece controlled by the player receiving the message.
+* Game piece update message: a fixed length string message protocol with type code 10 transmitting a string of size 1 containing the game piece controlled by the player receiving the message.
 * Game ending protocol: a single username and single character message protocol. This is sent at the end of a game. The single character at the end describes if the game ended in a win, loss, or tie for the notified player. The username contains the name of the opponent to allow distinguishing between games.
-* Game piece protocol: a single character message protocol containing the game piece belonging to the messaged player. This is sent when a player joins a game. 
+* Game piece protocol: a single character message protocol with type code 11 containing the game piece belonging to the messaged player. This is sent when a player joins a game. 
 
 ## Technologies Used
 * Python
