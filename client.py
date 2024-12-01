@@ -164,8 +164,8 @@ class Client:
               "       _____  ___   ____\n" +
               "        | |  / / \ | |_\n" +
               "        |_|  \_\_/ |_|__\n")
-        print("Welcome to VCD's Tic-Tac-Toe game!")
-        print("To play, you will need to create an account and login.\n" +
+        print("Welcome to Team CV's Tic-Tac-Toe game!")
+        print("To begin, you will need to create an account and login.\n" +
               "Then, create a game or join someone else's.\n" + 
               "If you create a game, you must join it as well to start playing.\n\n" +
               "For help with commands, type 'help'.")
@@ -228,6 +228,8 @@ class Client:
                 self.output_text('When logging in, you must provide a username, press space, and provide your password!')
             elif self.current_game is not None:
                 self.output_text("You cannot log in to an account in the middle of a game!")
+            if self.username is not None:
+                self.output_text("You are already logged in!")  
             else:
                 type_code = protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE
                 self.username = values[0]
