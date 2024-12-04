@@ -223,12 +223,15 @@ class Client:
                 type_code = protocol_definitions.BASE_HELP_MESSAGE_PROTOCOL_TYPE_CODE
                 values = []
         elif action == "login":
+            if not value:
+                self.output_text('When logging in, you must provide a username, press space, and provide your password!')
+                return 
             values = _parse_two_space_separated_values(value)
             if values is None:
                 self.output_text('When logging in, you must provide a username, press space, and provide your password!')
             elif self.current_game is not None:
                 self.output_text("You cannot log in to an account in the middle of a game!")
-            if self.username is not None:
+            elif self.username is not None:
                 self.output_text("You are already logged in!")  
             else:
                 type_code = protocol_definitions.SIGN_IN_PROTOCOL_TYPE_CODE
