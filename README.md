@@ -118,3 +118,10 @@ The following test uses should_perform_automatic_login=True to specify that clie
 ```
 
 The testing_utilities.py WaitingCommand objects can be used to wait for other conditions before letting a simulated client continue. 
+
+## Security/Risk Evaluation
+- Passwords are stored in plaintext, while they should be stored as secure hashes.
+- There is a lack of input validation, specifically for the functions used to construct database queries which can lead to injection attacks.
+- No encryption is present, from the connection to the communications.
+- The database doesn't have set permissions and rule of least privilege is not employed, meaning unauthorized access can be gained.
+- There is no password requirement or password validation parameters, meaning an account password may easily be bruteforced.
