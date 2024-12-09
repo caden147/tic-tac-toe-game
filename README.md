@@ -37,7 +37,7 @@ In the future, this game could be improved with a web-based UI and encryption. W
 As for encryption, none of the user data is currently encrypted. We could hash passwords and encrypt the traffic between the client and server.
 
 ## Retrospective
-Overall, we got a lot done with this project. The finished game works well with minimal bugs. When bugs were found, they were always quickly addressed and resolved.
+Overall, the technical aspect of this project went very well. The finished game works great with minimal bugs. When bugs were found, they were always quickly addressed and resolved.
 
 Throughout the project, our biggest challenge was communication. The expectations and plans for the project were unclear, so it caused some tension between the team. We were also not very organized with our task planning. If we had more clear expectations and tasks for each sprint, we could've had a lot fewer miscommunications.
 
