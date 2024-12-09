@@ -25,6 +25,22 @@ Reconnection:
 
 When the client program detects a problem with the server connection, it tries to reconnect with the server. The amount of time that it waits after each subsequent reconnection attempt increases until it reaches the maximum waiting time of 30 seconds. If the client program receives a message from the server, it resets the waiting time back to the minimum. The user currently has to log in again after the reconnection.
 
+## Security/Risk Evaluation
+- Passwords are stored in plaintext, while they should be stored as secure hashes.
+- There is a lack of input validation, specifically for the functions used to construct database queries which can lead to injection attacks.
+- No encryption is present, from the connection to the communications.
+- The database doesn't have set permissions and rule of least privilege is not employed, meaning unauthorized access can be gained.
+- There is no password requirement or password validation parameters, meaning an account password may easily be bruteforced.
+
+## Roadmap
+In the future, this game could be improved with a web-based UI and encryption. While the commandline interface works well, web-based games are a lot more user-friendly. This could also allow users to view their profile information more easily and keep track of their games. We could also implement a search function to find active users in case someone doesn't have a specific opponent in mind for their game.
+As for encryption, none of the user data is currently encrypted. We could hash passwords and encrypt the traffic between the client and server.
+
+## Retrospective
+Overall, the technical aspect of this project went very well. The finished game works great with minimal bugs. When bugs were found, they were always quickly addressed and resolved.
+
+Throughout the project, our biggest challenge was communication. The expectations and plans for the project were unclear, so it caused some tension between the team. We were also not very organized with our task planning. If we had more clear expectations and tasks for each sprint, we could've had a lot fewer miscommunications.
+
 ## Game Message Protocol Specification
 The game message protocol defines the structure and format of messages exchanged between the server and clients.
 * Message format: A struct-based format is used for message serialization and deserialization.
@@ -118,10 +134,3 @@ The following test uses should_perform_automatic_login=True to specify that clie
 ```
 
 The testing_utilities.py WaitingCommand objects can be used to wait for other conditions before letting a simulated client continue. 
-
-## Security/Risk Evaluation
-- Passwords are stored in plaintext, while they should be stored as secure hashes.
-- There is a lack of input validation, specifically for the functions used to construct database queries which can lead to injection attacks.
-- No encryption is present, from the connection to the communications.
-- The database doesn't have set permissions and rule of least privilege is not employed, meaning unauthorized access can be gained.
-- There is no password requirement or password validation parameters, meaning an account password may easily be bruteforced.
